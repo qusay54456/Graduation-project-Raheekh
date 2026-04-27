@@ -9,23 +9,19 @@ servers:
     description: Base API path
 tags:
   - name: health
-    description: Health operations
   - name: auth
-    description: Authentication operations
   - name: lots
-    description: Parking lot operations
   - name: spots
-    description: Spot operations
   - name: reservations
-    description: Reservation operations
   - name: dashboard
-    description: Supervisor dashboard operations
+  - name: users
+  - name: ratings
+  - name: profile
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
-      summary: Health check
       responses:
         "200":
           description: Healthy
@@ -38,7 +34,6 @@ paths:
     post:
       operationId: register
       tags: [auth]
-      summary: Register a new user
       requestBody:
         required: true
         content:
@@ -52,24 +47,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        "400": { description: Bad request, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "409": { description: Email already in use, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
 
   /auth/login:
     post:
       operationId: login
       tags: [auth]
-      summary: Login user
       requestBody:
         required: true
         content:
@@ -83,18 +67,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
-        "401":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+        "401": { description: Invalid credentials, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "429": { description: Too many login attempts, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
 
   /auth/logout:
     post:
       operationId: logout
       tags: [auth]
-      summary: Logout user
       responses:
         "200":
           description: Logged out
@@ -107,7 +86,6 @@ paths:
     get:
       operationId: getMe
       tags: [auth]
-      summary: Get current user
       responses:
         "200":
           description: Current user
@@ -115,27 +93,93 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-        "401":
-          description: Unauthorized
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: Code sent
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/ForgotPasswordResponse"
+
+  /auth/verify-code:
+    post:
+      operationId: verifyResetCode
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyCodeBody"
+      responses:
+        "200":
+          description: Code valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400": { description: Invalid or expired code, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400": { description: Invalid code, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+
+  /profile:
+    patch:
+      operationId: updateProfile
+      tags: [profile]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401": { description: Unauthorized, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
 
   /lots:
     get:
       operationId: getLots
       tags: [lots]
-      summary: Get all parking lots with optional distance sort
       parameters:
-        - name: lat
-          in: query
-          schema:
-            type: ["number", "null"]
-        - name: lng
-          in: query
-          schema:
-            type: ["number", "null"]
+        - { name: lat, in: query, schema: { type: ["number", "null"] } }
+        - { name: lng, in: query, schema: { type: ["number", "null"] } }
+        - { name: search, in: query, schema: { type: ["string", "null"] } }
+        - { name: maxPrice, in: query, schema: { type: ["number", "null"] } }
+        - { name: minAvailable, in: query, schema: { type: ["integer", "null"] } }
       responses:
         "200":
           description: List of parking lots
@@ -148,7 +192,6 @@ paths:
     post:
       operationId: createLot
       tags: [lots]
-      summary: Create a new parking lot (supervisor/admin)
       requestBody:
         required: true
         content:
@@ -167,13 +210,8 @@ paths:
     get:
       operationId: getLot
       tags: [lots]
-      summary: Get a specific parking lot with spots
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200":
           description: Parking lot with spots
@@ -181,20 +219,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ParkingLotWithSpots"
-        "404":
-          description: Not found
+        "404": { description: Not found }
+    patch:
+      operationId: updateLot
+      tags: [lots]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLotBody"
+      responses:
+        "200":
+          description: Updated lot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParkingLot"
 
   /lots/{id}/spots:
     get:
       operationId: getLotSpots
       tags: [spots]
-      summary: Get all spots for a lot
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200":
           description: List of spots
@@ -205,17 +255,28 @@ paths:
                 items:
                   $ref: "#/components/schemas/Spot"
 
+  /lots/{id}/ratings:
+    get:
+      operationId: getLotRatings
+      tags: [ratings]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: List of ratings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RatingWithUser"
+
   /spots/{id}:
     patch:
       operationId: updateSpot
       tags: [spots]
-      summary: Update spot status (supervisor)
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
@@ -229,14 +290,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Spot"
-        "404":
-          description: Not found
 
   /reservations:
     get:
       operationId: getReservations
       tags: [reservations]
-      summary: Get current user's reservations
       responses:
         "200":
           description: List of reservations
@@ -249,7 +307,6 @@ paths:
     post:
       operationId: createReservation
       tags: [reservations]
-      summary: Create a reservation
       requestBody:
         required: true
         content:
@@ -263,26 +320,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReservationWithDetails"
-        "400":
-          description: Spot not available or bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
 
   /reservations/{id}:
     get:
       operationId: getReservation
       tags: [reservations]
-      summary: Get a specific reservation
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200":
           description: Reservation details
@@ -290,20 +334,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReservationWithDetails"
-        "404":
-          description: Not found
 
   /reservations/{id}/cancel:
     patch:
       operationId: cancelReservation
       tags: [reservations]
-      summary: Cancel a reservation
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "200":
           description: Cancelled reservation
@@ -311,14 +348,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReservationWithDetails"
-        "404":
-          description: Not found
+
+  /reservations/{id}/rate:
+    post:
+      operationId: rateReservation
+      tags: [ratings]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRatingBody"
+      responses:
+        "201":
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rating"
 
   /dashboard/stats:
     get:
       operationId: getDashboardStats
       tags: [dashboard]
-      summary: Get supervisor dashboard stats
       responses:
         "200":
           description: Dashboard statistics
@@ -331,7 +385,11 @@ paths:
     get:
       operationId: getDashboardReservations
       tags: [dashboard]
-      summary: Get all reservations for supervisor's lots
+      parameters:
+        - { name: status, in: query, schema: { type: ["string", "null"] } }
+        - { name: lotId, in: query, schema: { type: ["integer", "null"] } }
+        - { name: dateFrom, in: query, schema: { type: ["string", "null"] } }
+        - { name: dateTo, in: query, schema: { type: ["string", "null"] } }
       responses:
         "200":
           description: All reservations
@@ -342,322 +400,359 @@ paths:
                 items:
                   $ref: "#/components/schemas/ReservationWithDetails"
 
+  /dashboard/users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /dashboard/users/{id}:
+    patch:
+      operationId: updateUser
+      tags: [users]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /dashboard/revenue:
+    get:
+      operationId: getRevenue
+      tags: [dashboard]
+      parameters:
+        - { name: period, in: query, schema: { type: ["string", "null"] } }
+      responses:
+        "200":
+          description: Revenue series
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RevenueResponse"
+
+  /dashboard/popular-lots:
+    get:
+      operationId: getPopularLots
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Popular lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PopularLot"
+
+  /dashboard/peak-hours:
+    get:
+      operationId: getPeakHours
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Peak hours data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PeakHour"
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
     ErrorResponse:
       type: object
       properties:
-        error:
-          type: string
-      required:
-        - error
+        error: { type: string }
+      required: [error]
 
     MessageResponse:
       type: object
       properties:
-        message:
-          type: string
-      required:
-        - message
+        message: { type: string }
+      required: [message]
 
     RegisterBody:
       type: object
       properties:
-        name:
-          type: string
-        email:
-          type: string
-        password:
-          type: string
-        role:
-          type: string
-          enum: [user, supervisor]
-      required:
-        - name
-        - email
-        - password
+        name: { type: string }
+        email: { type: string }
+        password: { type: string }
+        phone: { type: ["string", "null"] }
+        role: { type: string, enum: [user, supervisor] }
+      required: [name, email, password]
 
     LoginBody:
       type: object
       properties:
-        email:
-          type: string
-        password:
-          type: string
-      required:
-        - email
-        - password
+        email: { type: string }
+        password: { type: string }
+      required: [email, password]
 
     User:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        email:
-          type: string
-        role:
-          type: string
-        createdAt:
-          type: string
-      required:
-        - id
-        - name
-        - email
-        - role
-        - createdAt
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        phone: { type: ["string", "null"] }
+        profilePhotoUrl: { type: ["string", "null"] }
+        isBlocked: { type: boolean }
+        createdAt: { type: string }
+      required: [id, name, email, role, isBlocked, createdAt]
 
     AuthResponse:
       type: object
       properties:
-        user:
-          $ref: "#/components/schemas/User"
-        message:
-          type: string
-      required:
-        - user
-        - message
+        user: { $ref: "#/components/schemas/User" }
+        message: { type: string }
+      required: [user, message]
+
+    ForgotPasswordBody:
+      type: object
+      properties:
+        email: { type: string }
+      required: [email]
+
+    ForgotPasswordResponse:
+      type: object
+      properties:
+        message: { type: string }
+        devCode: { type: ["string", "null"] }
+      required: [message]
+
+    VerifyCodeBody:
+      type: object
+      properties:
+        email: { type: string }
+        code: { type: string }
+      required: [email, code]
+
+    ResetPasswordBody:
+      type: object
+      properties:
+        email: { type: string }
+        code: { type: string }
+        newPassword: { type: string }
+      required: [email, code, newPassword]
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        name: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        profilePhotoUrl: { type: ["string", "null"] }
+
+    UpdateUserBody:
+      type: object
+      properties:
+        role: { type: ["string", "null"], enum: [user, supervisor, null] }
+        isBlocked: { type: ["boolean", "null"] }
 
     ParkingLot:
       type: object
       properties:
-        id:
-          type: integer
-        ownerId:
-          type: integer
-        name:
-          type: string
-        location:
-          type: string
-        totalSpots:
-          type: integer
-        lat:
-          type: number
-        lng:
-          type: number
-        createdAt:
-          type: string
-      required:
-        - id
-        - ownerId
-        - name
-        - location
-        - totalSpots
-        - lat
-        - lng
-        - createdAt
+        id: { type: integer }
+        ownerId: { type: integer }
+        name: { type: string }
+        location: { type: string }
+        totalSpots: { type: integer }
+        lat: { type: number }
+        lng: { type: number }
+        pricePerHour: { type: number }
+        isActive: { type: boolean }
+        createdAt: { type: string }
+      required: [id, ownerId, name, location, totalSpots, lat, lng, pricePerHour, isActive, createdAt]
 
     ParkingLotWithStats:
-      type: object
-      properties:
-        id:
-          type: integer
-        ownerId:
-          type: integer
-        name:
-          type: string
-        location:
-          type: string
-        totalSpots:
-          type: integer
-        lat:
-          type: number
-        lng:
-          type: number
-        createdAt:
-          type: string
-        availableSpots:
-          type: integer
-        reservedSpots:
-          type: integer
-        occupiedSpots:
-          type: integer
-        distance:
-          type: ["number", "null"]
-      required:
-        - id
-        - ownerId
-        - name
-        - location
-        - totalSpots
-        - lat
-        - lng
-        - createdAt
-        - availableSpots
-        - reservedSpots
-        - occupiedSpots
+      allOf:
+        - $ref: "#/components/schemas/ParkingLot"
+        - type: object
+          properties:
+            availableSpots: { type: integer }
+            reservedSpots: { type: integer }
+            occupiedSpots: { type: integer }
+            distance: { type: ["number", "null"] }
+            avgRating: { type: number }
+            ratingCount: { type: integer }
+          required: [availableSpots, reservedSpots, occupiedSpots, avgRating, ratingCount]
 
     ParkingLotWithSpots:
-      type: object
-      properties:
-        id:
-          type: integer
-        ownerId:
-          type: integer
-        name:
-          type: string
-        location:
-          type: string
-        totalSpots:
-          type: integer
-        lat:
-          type: number
-        lng:
-          type: number
-        createdAt:
-          type: string
-        spots:
-          type: array
-          items:
-            $ref: "#/components/schemas/Spot"
-      required:
-        - id
-        - ownerId
-        - name
-        - location
-        - totalSpots
-        - lat
-        - lng
-        - createdAt
-        - spots
+      allOf:
+        - $ref: "#/components/schemas/ParkingLot"
+        - type: object
+          properties:
+            spots:
+              type: array
+              items:
+                $ref: "#/components/schemas/Spot"
+            avgRating: { type: number }
+            ratingCount: { type: integer }
+          required: [spots, avgRating, ratingCount]
 
     CreateLotBody:
       type: object
       properties:
-        name:
-          type: string
-        location:
-          type: string
-        totalSpots:
-          type: integer
-        lat:
-          type: number
-        lng:
-          type: number
-      required:
-        - name
-        - location
-        - totalSpots
-        - lat
-        - lng
+        name: { type: string }
+        location: { type: string }
+        totalSpots: { type: integer }
+        lat: { type: number }
+        lng: { type: number }
+        pricePerHour: { type: number }
+      required: [name, location, totalSpots, lat, lng, pricePerHour]
+
+    UpdateLotBody:
+      type: object
+      properties:
+        name: { type: ["string", "null"] }
+        location: { type: ["string", "null"] }
+        pricePerHour: { type: ["number", "null"] }
+        isActive: { type: ["boolean", "null"] }
+        lat: { type: ["number", "null"] }
+        lng: { type: ["number", "null"] }
 
     Spot:
       type: object
       properties:
-        id:
-          type: integer
-        lotId:
-          type: integer
-        spotNumber:
-          type: string
-        status:
-          type: string
-          enum: [available, reserved, occupied]
-      required:
-        - id
-        - lotId
-        - spotNumber
-        - status
+        id: { type: integer }
+        lotId: { type: integer }
+        spotNumber: { type: string }
+        status: { type: string }
+      required: [id, lotId, spotNumber, status]
 
     UpdateSpotBody:
       type: object
       properties:
-        status:
-          type: string
-          enum: [available, reserved, occupied]
-      required:
-        - status
+        status: { type: string, enum: [available, reserved, occupied] }
+      required: [status]
 
     CreateReservationBody:
       type: object
       properties:
-        spotId:
-          type: integer
-        startTime:
-          type: string
-        endTime:
-          type: string
-      required:
-        - spotId
-        - startTime
-        - endTime
+        spotId: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+      required: [spotId, startTime, endTime]
 
     ReservationWithDetails:
       type: object
       properties:
-        id:
-          type: integer
-        userId:
-          type: integer
-        spotId:
-          type: integer
-        startTime:
-          type: string
-        endTime:
-          type: string
-        status:
-          type: string
-          enum: [active, completed, cancelled]
-        spotNumber:
-          type: string
-        lotName:
-          type: string
-        lotLocation:
-          type: string
-        lotLat:
-          type: number
-        lotLng:
-          type: number
-        userName:
-          type: string
-        createdAt:
-          type: string
-      required:
-        - id
-        - userId
-        - spotId
-        - startTime
-        - endTime
-        - status
-        - spotNumber
-        - lotName
-        - lotLocation
-        - lotLat
-        - lotLng
-        - userName
-        - createdAt
+        id: { type: integer }
+        userId: { type: integer }
+        spotId: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+        status: { type: string }
+        totalPrice: { type: number }
+        spotNumber: { type: string }
+        lotId: { type: integer }
+        lotName: { type: string }
+        lotLocation: { type: string }
+        lotLat: { type: number }
+        lotLng: { type: number }
+        userName: { type: string }
+        userEmail: { type: string }
+        userPhone: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, userId, spotId, startTime, endTime, status, totalPrice, spotNumber, lotId, lotName, lotLocation, lotLat, lotLng, userName, userEmail, createdAt]
 
     DashboardStats:
       type: object
       properties:
-        totalSpots:
-          type: integer
-        availableSpots:
-          type: integer
-        reservedSpots:
-          type: integer
-        occupiedSpots:
-          type: integer
-        totalReservations:
-          type: integer
-        activeReservations:
-          type: integer
-        totalLots:
-          type: integer
-      required:
-        - totalSpots
-        - availableSpots
-        - reservedSpots
-        - occupiedSpots
-        - totalReservations
-        - activeReservations
-        - totalLots
+        totalSpots: { type: integer }
+        availableSpots: { type: integer }
+        reservedSpots: { type: integer }
+        occupiedSpots: { type: integer }
+        totalReservations: { type: integer }
+        activeReservations: { type: integer }
+        totalLots: { type: integer }
+        totalUsers: { type: integer }
+        totalRevenue: { type: number }
+      required: [totalSpots, availableSpots, reservedSpots, occupiedSpots, totalReservations, activeReservations, totalLots, totalUsers, totalRevenue]
+
+    Rating:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        lotId: { type: integer }
+        reservationId: { type: ["integer", "null"] }
+        stars: { type: integer }
+        comment: { type: ["string", "null"] }
+        createdAt: { type: string }
+      required: [id, userId, lotId, stars, createdAt]
+
+    RatingWithUser:
+      allOf:
+        - $ref: "#/components/schemas/Rating"
+        - type: object
+          properties:
+            userName: { type: string }
+          required: [userName]
+
+    CreateRatingBody:
+      type: object
+      properties:
+        stars: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: ["string", "null"] }
+      required: [stars]
+
+    RevenuePoint:
+      type: object
+      properties:
+        date: { type: string }
+        revenue: { type: number }
+        bookings: { type: integer }
+      required: [date, revenue, bookings]
+
+    RevenueResponse:
+      type: object
+      properties:
+        period: { type: string }
+        total: { type: number }
+        series:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenuePoint"
+      required: [period, total, series]
+
+    PopularLot:
+      type: object
+      properties:
+        lotId: { type: integer }
+        lotName: { type: string }
+        bookings: { type: integer }
+        revenue: { type: number }
+      required: [lotId, lotName, bookings, revenue]
+
+    PeakHour:
+      type: object
+      properties:
+        hour: { type: integer }
+        bookings: { type: integer }
+      required: [hour, bookings]

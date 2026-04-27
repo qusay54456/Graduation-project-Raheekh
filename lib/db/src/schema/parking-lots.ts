@@ -12,6 +12,8 @@ export const parkingLotsTable = sqliteTable("parking_lots", {
   totalSpots: integer("total_spots").notNull(),
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
+  pricePerHour: real("price_per_hour").notNull().default(5),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

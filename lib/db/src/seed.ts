@@ -21,20 +21,20 @@ insertUser.run(1, "محمد سليمان", "supervisor@parknow.ps", supervisorHa
 insertUser.run(2, "أحمد الخطيب", "user@parknow.ps", userHash, "user");
 
 const lots = [
-  { id: 1, name: "موقف المنارة المركزي", location: "رام الله - دوار المنارة", lat: 31.9038, lng: 35.2034 },
-  { id: 2, name: "موقف البيرة الرئيسي", location: "البيرة - شارع الاستقلال", lat: 31.9122, lng: 35.2157 },
-  { id: 3, name: "موقف المدينة التجاري", location: "رام الله - شارع الإرسال", lat: 31.8975, lng: 35.1978 },
+  { id: 1, name: "موقف المنارة المركزي", location: "رام الله - دوار المنارة", lat: 31.9038, lng: 35.2034, pricePerHour: 5 },
+  { id: 2, name: "موقف البيرة الرئيسي", location: "البيرة - شارع الاستقلال", lat: 31.9122, lng: 35.2157, pricePerHour: 4 },
+  { id: 3, name: "موقف المدينة التجاري", location: "رام الله - شارع الإرسال", lat: 31.8975, lng: 35.1978, pricePerHour: 7 },
 ];
 
 const insertLot = sqlite.prepare(
-  "INSERT INTO parking_lots (id, owner_id, name, location, total_spots, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  "INSERT INTO parking_lots (id, owner_id, name, location, total_spots, lat, lng, price_per_hour, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)"
 );
 const insertSpot = sqlite.prepare(
   "INSERT INTO spots (lot_id, spot_number, status) VALUES (?, ?, 'available')"
 );
 
 for (const lot of lots) {
-  insertLot.run(lot.id, 1, lot.name, lot.location, 5, lot.lat, lot.lng);
+  insertLot.run(lot.id, 1, lot.name, lot.location, 5, lot.lat, lot.lng, lot.pricePerHour);
   for (let i = 1; i <= 5; i++) {
     insertSpot.run(lot.id, `A${i}`);
   }

@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -12,6 +12,7 @@ export const reservationsTable = sqliteTable("reservations", {
   startTime: integer("start_time", { mode: "timestamp" }).notNull(),
   endTime: integer("end_time", { mode: "timestamp" }).notNull(),
   status: text("status").notNull().default("active"),
+  totalPrice: real("total_price").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

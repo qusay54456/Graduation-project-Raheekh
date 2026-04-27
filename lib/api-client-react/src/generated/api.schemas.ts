@@ -29,6 +29,8 @@ export interface RegisterBody {
   name: string;
   email: string;
   password: string;
+  /** @nullable */
+  phone?: string | null;
   role?: RegisterBodyRole;
 }
 
@@ -42,12 +44,66 @@ export interface User {
   name: string;
   email: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  profilePhotoUrl?: string | null;
+  isBlocked: boolean;
   createdAt: string;
 }
 
 export interface AuthResponse {
   user: User;
   message: string;
+}
+
+export interface ForgotPasswordBody {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  /** @nullable */
+  devCode?: string | null;
+}
+
+export interface VerifyCodeBody {
+  email: string;
+  code: string;
+}
+
+export interface ResetPasswordBody {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface UpdateProfileBody {
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  profilePhotoUrl?: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type UpdateUserBodyRole =
+  | (typeof UpdateUserBodyRole)[keyof typeof UpdateUserBodyRole]
+  | null;
+
+export const UpdateUserBodyRole = {
+  user: "user",
+  supervisor: "supervisor",
+} as const;
+
+export interface UpdateUserBody {
+  /** @nullable */
+  role?: UpdateUserBodyRole;
+  /** @nullable */
+  isBlocked?: boolean | null;
 }
 
 export interface ParkingLot {
@@ -58,51 +114,33 @@ export interface ParkingLot {
   totalSpots: number;
   lat: number;
   lng: number;
+  pricePerHour: number;
+  isActive: boolean;
   createdAt: string;
 }
 
-export interface ParkingLotWithStats {
-  id: number;
-  ownerId: number;
-  name: string;
-  location: string;
-  totalSpots: number;
-  lat: number;
-  lng: number;
-  createdAt: string;
+export type ParkingLotWithStats = ParkingLot & {
   availableSpots: number;
   reservedSpots: number;
   occupiedSpots: number;
   /** @nullable */
   distance?: number | null;
-}
-
-export type SpotStatus = (typeof SpotStatus)[keyof typeof SpotStatus];
-
-export const SpotStatus = {
-  available: "available",
-  reserved: "reserved",
-  occupied: "occupied",
-} as const;
+  avgRating: number;
+  ratingCount: number;
+};
 
 export interface Spot {
   id: number;
   lotId: number;
   spotNumber: string;
-  status: SpotStatus;
+  status: string;
 }
 
-export interface ParkingLotWithSpots {
-  id: number;
-  ownerId: number;
-  name: string;
-  location: string;
-  totalSpots: number;
-  lat: number;
-  lng: number;
-  createdAt: string;
+export type ParkingLotWithSpots = ParkingLot & {
   spots: Spot[];
-}
+  avgRating: number;
+  ratingCount: number;
+};
 
 export interface CreateLotBody {
   name: string;
@@ -110,6 +148,22 @@ export interface CreateLotBody {
   totalSpots: number;
   lat: number;
   lng: number;
+  pricePerHour: number;
+}
+
+export interface UpdateLotBody {
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  pricePerHour?: number | null;
+  /** @nullable */
+  isActive?: boolean | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
 }
 
 export type UpdateSpotBodyStatus =
@@ -131,28 +185,24 @@ export interface CreateReservationBody {
   endTime: string;
 }
 
-export type ReservationWithDetailsStatus =
-  (typeof ReservationWithDetailsStatus)[keyof typeof ReservationWithDetailsStatus];
-
-export const ReservationWithDetailsStatus = {
-  active: "active",
-  completed: "completed",
-  cancelled: "cancelled",
-} as const;
-
 export interface ReservationWithDetails {
   id: number;
   userId: number;
   spotId: number;
   startTime: string;
   endTime: string;
-  status: ReservationWithDetailsStatus;
+  status: string;
+  totalPrice: number;
   spotNumber: string;
+  lotId: number;
   lotName: string;
   lotLocation: string;
   lotLat: number;
   lotLng: number;
   userName: string;
+  userEmail: string;
+  /** @nullable */
+  userPhone?: string | null;
   createdAt: string;
 }
 
@@ -164,6 +214,58 @@ export interface DashboardStats {
   totalReservations: number;
   activeReservations: number;
   totalLots: number;
+  totalUsers: number;
+  totalRevenue: number;
+}
+
+export interface Rating {
+  id: number;
+  userId: number;
+  lotId: number;
+  /** @nullable */
+  reservationId?: number | null;
+  stars: number;
+  /** @nullable */
+  comment?: string | null;
+  createdAt: string;
+}
+
+export type RatingWithUser = Rating & {
+  userName: string;
+};
+
+export interface CreateRatingBody {
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  stars: number;
+  /** @nullable */
+  comment?: string | null;
+}
+
+export interface RevenuePoint {
+  date: string;
+  revenue: number;
+  bookings: number;
+}
+
+export interface RevenueResponse {
+  period: string;
+  total: number;
+  series: RevenuePoint[];
+}
+
+export interface PopularLot {
+  lotId: number;
+  lotName: string;
+  bookings: number;
+  revenue: number;
+}
+
+export interface PeakHour {
+  hour: number;
+  bookings: number;
 }
 
 export type GetLotsParams = {
@@ -175,4 +277,42 @@ export type GetLotsParams = {
    * @nullable
    */
   lng?: number | null;
+  /**
+   * @nullable
+   */
+  search?: string | null;
+  /**
+   * @nullable
+   */
+  maxPrice?: number | null;
+  /**
+   * @nullable
+   */
+  minAvailable?: number | null;
+};
+
+export type GetDashboardReservationsParams = {
+  /**
+   * @nullable
+   */
+  status?: string | null;
+  /**
+   * @nullable
+   */
+  lotId?: number | null;
+  /**
+   * @nullable
+   */
+  dateFrom?: string | null;
+  /**
+   * @nullable
+   */
+  dateTo?: string | null;
+};
+
+export type GetRevenueParams = {
+  /**
+   * @nullable
+   */
+  period?: string | null;
 };

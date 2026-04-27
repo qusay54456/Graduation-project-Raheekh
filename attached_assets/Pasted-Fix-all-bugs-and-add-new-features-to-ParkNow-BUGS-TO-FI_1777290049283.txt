@@ -1,0 +1,61 @@
+Fix all bugs and add new features to ParkNow:
+
+## BUGS TO FIX:
+1. Data not persisting - fix SQLite database so all data 
+   (users, bookings, spots) is saved permanently and survives restarts
+2. Password not saved after logout - fix session persistence 
+   and remember login credentials properly
+3. General stability fixes across all pages
+
+## NEW FEATURES FOR SUPERVISOR DASHBOARD:
+1. Full booking management:
+   - View all reservations with user details (name, email, phone)
+   - Filter bookings by: date, status (active/completed/cancelled), parking lot
+   - Export bookings to CSV
+2. Parking lot management:
+   - Add new parking lots with location, total spots, coordinates
+   - Edit existing lot details
+   - Activate/deactivate lots
+3. User management:
+   - View all registered users
+   - Block/unblock users
+   - Change user roles (user/supervisor)
+4. Revenue statistics:
+   - Daily/weekly/monthly revenue charts
+   - Most booked parking lots chart
+   - Peak hours analysis
+5. Real-time notifications panel showing new bookings instantly
+
+## PASSWORD RESET FEATURE:
+1. "Forgot Password" link on login page
+2. User enters their email
+3. System sends a 6-digit verification code to their email
+4. User enters the code to verify identity
+5. User sets a new password
+6. Use Nodemailer with Gmail SMTP to send emails
+
+## ADDITIONAL WEBSITE IMPROVEMENTS:
+1. User profile page:
+   - Edit name, phone number, profile photo
+   - View booking history with details
+   - Cancel upcoming bookings
+2. Booking enhancements:
+   - Show price per hour for each parking lot
+   - Booking confirmation email sent to user
+   - QR code generated for each booking
+3. Homepage improvements:
+   - Search bar to find parking lots by name or area
+   - Filter by: available spots, price range, distance
+   - Show ratings and reviews for each lot
+4. Rating system:
+   - Users can rate parking lots (1-5 stars) after completed booking
+   - Show average rating on homepage and lot details
+5. Responsive mobile-friendly design improvements
+
+## SECURITY:
+1. Protect all API routes with proper authentication checks
+2. Input validation on all forms
+3. Rate limiting on login attempts (max 5 attempts then 15 min lockout)
+
+Please implement all changes, test everything works, 
+and make sure data persists after server restart.

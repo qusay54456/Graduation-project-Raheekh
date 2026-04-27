@@ -9,7 +9,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User as UserIcon, LogOut, LayoutDashboard, Calendar } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -24,21 +25,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ParkNow
           </Link>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-2 sm:gap-4">
             {user ? (
               <>
-                <Link href="/my-bookings" className="text-sm font-medium hover:text-primary transition-colors">
-                  حجوزاتي <span className="text-xs text-muted-foreground ml-1">(My Bookings)</span>
+                <Link href="/my-bookings" className="hidden sm:inline text-sm font-medium hover:text-primary transition-colors">
+                  حجوزاتي
                 </Link>
                 {user.role === "supervisor" && (
-                  <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors text-secondary">
-                    لوحة التحكم <span className="text-xs ml-1">(Dashboard)</span>
+                  <Link href="/dashboard" className="hidden sm:inline text-sm font-medium hover:text-primary transition-colors text-secondary">
+                    لوحة التحكم
                   </Link>
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
+                        {user.profilePhotoUrl ? <AvatarImage src={user.profilePhotoUrl} alt={user.name} /> : null}
                         <AvatarFallback className="bg-primary text-primary-foreground">
                           {user.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
@@ -49,17 +51,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
+                        <p className="text-xs leading-none text-muted-foreground" dir="ltr">{user.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {
-                      logout();
-                      setLocation("/login");
-                    }} className="text-destructive focus:bg-destructive/10 cursor-pointer">
-                      تسجيل الخروج (Logout)
+                    <DropdownMenuItem onClick={() => setLocation("/profile")} className="cursor-pointer">
+                      <UserIcon className="ml-2 h-4 w-4" /> الملف الشخصي
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLocation("/my-bookings")} className="cursor-pointer sm:hidden">
+                      <Calendar className="ml-2 h-4 w-4" /> حجوزاتي
+                    </DropdownMenuItem>
+                    {user.role === "supervisor" && (
+                      <DropdownMenuItem onClick={() => setLocation("/dashboard")} className="cursor-pointer sm:hidden">
+                        <LayoutDashboard className="ml-2 h-4 w-4" /> لوحة التحكم
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => { logout(); setLocation("/login"); }} className="text-destructive focus:bg-destructive/10 cursor-pointer">
+                      <LogOut className="ml-2 h-4 w-4" /> تسجيل الخروج
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

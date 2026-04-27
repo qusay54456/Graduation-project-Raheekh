@@ -7,26 +7,18 @@
  */
 import * as zod from "zod";
 
-/**
- * @summary Health check
- */
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
 
-/**
- * @summary Register a new user
- */
 export const RegisterBody = zod.object({
   name: zod.string(),
   email: zod.string(),
   password: zod.string(),
+  phone: zod.string().nullish(),
   role: zod.enum(["user", "supervisor"]).optional(),
 });
 
-/**
- * @summary Login user
- */
 export const LoginBody = zod.object({
   email: zod.string(),
   password: zod.string(),
@@ -38,72 +30,162 @@ export const LoginResponse = zod.object({
     name: zod.string(),
     email: zod.string(),
     role: zod.string(),
+    phone: zod.string().nullish(),
+    profilePhotoUrl: zod.string().nullish(),
+    isBlocked: zod.boolean(),
     createdAt: zod.string(),
   }),
   message: zod.string(),
 });
 
-/**
- * @summary Logout user
- */
 export const LogoutResponse = zod.object({
   message: zod.string(),
 });
 
-/**
- * @summary Get current user
- */
 export const GetMeResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
   email: zod.string(),
   role: zod.string(),
+  phone: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
+  isBlocked: zod.boolean(),
   createdAt: zod.string(),
 });
 
-/**
- * @summary Get all parking lots with optional distance sort
- */
+export const ForgotPasswordBody = zod.object({
+  email: zod.string(),
+});
+
+export const ForgotPasswordResponse = zod.object({
+  message: zod.string(),
+  devCode: zod.string().nullish(),
+});
+
+export const VerifyResetCodeBody = zod.object({
+  email: zod.string(),
+  code: zod.string(),
+});
+
+export const VerifyResetCodeResponse = zod.object({
+  message: zod.string(),
+});
+
+export const ResetPasswordBody = zod.object({
+  email: zod.string(),
+  code: zod.string(),
+  newPassword: zod.string(),
+});
+
+export const ResetPasswordResponse = zod.object({
+  message: zod.string(),
+});
+
+export const UpdateProfileBody = zod.object({
+  name: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
+});
+
+export const UpdateProfileResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.string(),
+  phone: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
+  isBlocked: zod.boolean(),
+  createdAt: zod.string(),
+});
+
 export const GetLotsQueryParams = zod.object({
   lat: zod.coerce.number().nullish(),
   lng: zod.coerce.number().nullish(),
+  search: zod.coerce.string().nullish(),
+  maxPrice: zod.coerce.number().nullish(),
+  minAvailable: zod.coerce.number().nullish(),
 });
 
-export const GetLotsResponseItem = zod.object({
-  id: zod.number(),
-  ownerId: zod.number(),
-  name: zod.string(),
-  location: zod.string(),
-  totalSpots: zod.number(),
-  lat: zod.number(),
-  lng: zod.number(),
-  createdAt: zod.string(),
-  availableSpots: zod.number(),
-  reservedSpots: zod.number(),
-  occupiedSpots: zod.number(),
-  distance: zod.number().nullish(),
-});
+export const GetLotsResponseItem = zod
+  .object({
+    id: zod.number(),
+    ownerId: zod.number(),
+    name: zod.string(),
+    location: zod.string(),
+    totalSpots: zod.number(),
+    lat: zod.number(),
+    lng: zod.number(),
+    pricePerHour: zod.number(),
+    isActive: zod.boolean(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      availableSpots: zod.number(),
+      reservedSpots: zod.number(),
+      occupiedSpots: zod.number(),
+      distance: zod.number().nullish(),
+      avgRating: zod.number(),
+      ratingCount: zod.number(),
+    }),
+  );
 export const GetLotsResponse = zod.array(GetLotsResponseItem);
 
-/**
- * @summary Create a new parking lot (supervisor/admin)
- */
 export const CreateLotBody = zod.object({
   name: zod.string(),
   location: zod.string(),
   totalSpots: zod.number(),
   lat: zod.number(),
   lng: zod.number(),
+  pricePerHour: zod.number(),
 });
 
-/**
- * @summary Get a specific parking lot with spots
- */
 export const GetLotParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const GetLotResponse = zod.object({
+export const GetLotResponse = zod
+  .object({
+    id: zod.number(),
+    ownerId: zod.number(),
+    name: zod.string(),
+    location: zod.string(),
+    totalSpots: zod.number(),
+    lat: zod.number(),
+    lng: zod.number(),
+    pricePerHour: zod.number(),
+    isActive: zod.boolean(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      spots: zod.array(
+        zod.object({
+          id: zod.number(),
+          lotId: zod.number(),
+          spotNumber: zod.string(),
+          status: zod.string(),
+        }),
+      ),
+      avgRating: zod.number(),
+      ratingCount: zod.number(),
+    }),
+  );
+
+export const UpdateLotParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateLotBody = zod.object({
+  name: zod.string().nullish(),
+  location: zod.string().nullish(),
+  pricePerHour: zod.number().nullish(),
+  isActive: zod.boolean().nullish(),
+  lat: zod.number().nullish(),
+  lng: zod.number().nullish(),
+});
+
+export const UpdateLotResponse = zod.object({
   id: zod.number(),
   ownerId: zod.number(),
   name: zod.string(),
@@ -111,20 +193,11 @@ export const GetLotResponse = zod.object({
   totalSpots: zod.number(),
   lat: zod.number(),
   lng: zod.number(),
+  pricePerHour: zod.number(),
+  isActive: zod.boolean(),
   createdAt: zod.string(),
-  spots: zod.array(
-    zod.object({
-      id: zod.number(),
-      lotId: zod.number(),
-      spotNumber: zod.string(),
-      status: zod.enum(["available", "reserved", "occupied"]),
-    }),
-  ),
 });
 
-/**
- * @summary Get all spots for a lot
- */
 export const GetLotSpotsParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -133,13 +206,31 @@ export const GetLotSpotsResponseItem = zod.object({
   id: zod.number(),
   lotId: zod.number(),
   spotNumber: zod.string(),
-  status: zod.enum(["available", "reserved", "occupied"]),
+  status: zod.string(),
 });
 export const GetLotSpotsResponse = zod.array(GetLotSpotsResponseItem);
 
-/**
- * @summary Update spot status (supervisor)
- */
+export const GetLotRatingsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetLotRatingsResponseItem = zod
+  .object({
+    id: zod.number(),
+    userId: zod.number(),
+    lotId: zod.number(),
+    reservationId: zod.number().nullish(),
+    stars: zod.number(),
+    comment: zod.string().nullish(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      userName: zod.string(),
+    }),
+  );
+export const GetLotRatingsResponse = zod.array(GetLotRatingsResponseItem);
+
 export const UpdateSpotParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -152,41 +243,36 @@ export const UpdateSpotResponse = zod.object({
   id: zod.number(),
   lotId: zod.number(),
   spotNumber: zod.string(),
-  status: zod.enum(["available", "reserved", "occupied"]),
+  status: zod.string(),
 });
 
-/**
- * @summary Get current user's reservations
- */
 export const GetReservationsResponseItem = zod.object({
   id: zod.number(),
   userId: zod.number(),
   spotId: zod.number(),
   startTime: zod.string(),
   endTime: zod.string(),
-  status: zod.enum(["active", "completed", "cancelled"]),
+  status: zod.string(),
+  totalPrice: zod.number(),
   spotNumber: zod.string(),
+  lotId: zod.number(),
   lotName: zod.string(),
   lotLocation: zod.string(),
   lotLat: zod.number(),
   lotLng: zod.number(),
   userName: zod.string(),
+  userEmail: zod.string(),
+  userPhone: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const GetReservationsResponse = zod.array(GetReservationsResponseItem);
 
-/**
- * @summary Create a reservation
- */
 export const CreateReservationBody = zod.object({
   spotId: zod.number(),
   startTime: zod.string(),
   endTime: zod.string(),
 });
 
-/**
- * @summary Get a specific reservation
- */
 export const GetReservationParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -197,19 +283,20 @@ export const GetReservationResponse = zod.object({
   spotId: zod.number(),
   startTime: zod.string(),
   endTime: zod.string(),
-  status: zod.enum(["active", "completed", "cancelled"]),
+  status: zod.string(),
+  totalPrice: zod.number(),
   spotNumber: zod.string(),
+  lotId: zod.number(),
   lotName: zod.string(),
   lotLocation: zod.string(),
   lotLat: zod.number(),
   lotLng: zod.number(),
   userName: zod.string(),
+  userEmail: zod.string(),
+  userPhone: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
-/**
- * @summary Cancel a reservation
- */
 export const CancelReservationParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -220,19 +307,31 @@ export const CancelReservationResponse = zod.object({
   spotId: zod.number(),
   startTime: zod.string(),
   endTime: zod.string(),
-  status: zod.enum(["active", "completed", "cancelled"]),
+  status: zod.string(),
+  totalPrice: zod.number(),
   spotNumber: zod.string(),
+  lotId: zod.number(),
   lotName: zod.string(),
   lotLocation: zod.string(),
   lotLat: zod.number(),
   lotLng: zod.number(),
   userName: zod.string(),
+  userEmail: zod.string(),
+  userPhone: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
-/**
- * @summary Get supervisor dashboard stats
- */
+export const RateReservationParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const rateReservationBodyStarsMax = 5;
+
+export const RateReservationBody = zod.object({
+  stars: zod.number().min(1).max(rateReservationBodyStarsMax),
+  comment: zod.string().nullish(),
+});
+
 export const GetDashboardStatsResponse = zod.object({
   totalSpots: zod.number(),
   availableSpots: zod.number(),
@@ -241,26 +340,100 @@ export const GetDashboardStatsResponse = zod.object({
   totalReservations: zod.number(),
   activeReservations: zod.number(),
   totalLots: zod.number(),
+  totalUsers: zod.number(),
+  totalRevenue: zod.number(),
 });
 
-/**
- * @summary Get all reservations for supervisor's lots
- */
+export const GetDashboardReservationsQueryParams = zod.object({
+  status: zod.coerce.string().nullish(),
+  lotId: zod.coerce.number().nullish(),
+  dateFrom: zod.coerce.string().nullish(),
+  dateTo: zod.coerce.string().nullish(),
+});
+
 export const GetDashboardReservationsResponseItem = zod.object({
   id: zod.number(),
   userId: zod.number(),
   spotId: zod.number(),
   startTime: zod.string(),
   endTime: zod.string(),
-  status: zod.enum(["active", "completed", "cancelled"]),
+  status: zod.string(),
+  totalPrice: zod.number(),
   spotNumber: zod.string(),
+  lotId: zod.number(),
   lotName: zod.string(),
   lotLocation: zod.string(),
   lotLat: zod.number(),
   lotLng: zod.number(),
   userName: zod.string(),
+  userEmail: zod.string(),
+  userPhone: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const GetDashboardReservationsResponse = zod.array(
   GetDashboardReservationsResponseItem,
 );
+
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.string(),
+  phone: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
+  isBlocked: zod.boolean(),
+  createdAt: zod.string(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+export const UpdateUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateUserBody = zod.object({
+  role: zod
+    .union([zod.literal("user"), zod.literal("supervisor"), zod.literal(null)])
+    .nullish(),
+  isBlocked: zod.boolean().nullish(),
+});
+
+export const UpdateUserResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.string(),
+  phone: zod.string().nullish(),
+  profilePhotoUrl: zod.string().nullish(),
+  isBlocked: zod.boolean(),
+  createdAt: zod.string(),
+});
+
+export const GetRevenueQueryParams = zod.object({
+  period: zod.coerce.string().nullish(),
+});
+
+export const GetRevenueResponse = zod.object({
+  period: zod.string(),
+  total: zod.number(),
+  series: zod.array(
+    zod.object({
+      date: zod.string(),
+      revenue: zod.number(),
+      bookings: zod.number(),
+    }),
+  ),
+});
+
+export const GetPopularLotsResponseItem = zod.object({
+  lotId: zod.number(),
+  lotName: zod.string(),
+  bookings: zod.number(),
+  revenue: zod.number(),
+});
+export const GetPopularLotsResponse = zod.array(GetPopularLotsResponseItem);
+
+export const GetPeakHoursResponseItem = zod.object({
+  hour: zod.number(),
+  bookings: zod.number(),
+});
+export const GetPeakHoursResponse = zod.array(GetPeakHoursResponseItem);

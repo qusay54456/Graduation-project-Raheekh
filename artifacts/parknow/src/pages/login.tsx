@@ -18,10 +18,8 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     login({ data: { email, password } }, {
-      onSuccess: () => {
-        setLocation("/");
-      },
-      onSettled: () => setIsLoading(false)
+      onSuccess: () => setLocation("/"),
+      onSettled: () => setIsLoading(false),
     });
   };
 
@@ -35,38 +33,22 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">تسجيل الدخول</CardTitle>
-          <CardDescription>
-            Login to your ParkNow account
-          </CardDescription>
+          <CardDescription>Login to your ParkNow account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني (Email)</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-                dir="ltr"
-                className="text-left"
-              />
+              <Input id="email" type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required dir="ltr" className="text-left" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">كلمة المرور (Password)</Label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  نسيت كلمة المرور؟
+                </Link>
               </div>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-                dir="ltr"
-                className="text-left"
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required dir="ltr" className="text-left" />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
@@ -75,7 +57,7 @@ export default function Login() {
               دخول (Sign In)
             </Button>
             <div className="text-sm text-center text-muted-foreground">
-              ليس لديك حساب؟ {" "}
+              ليس لديك حساب؟{" "}
               <Link href="/register" className="text-primary hover:underline font-medium">
                 إنشاء حساب (Register)
               </Link>

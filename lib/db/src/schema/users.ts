@@ -9,6 +9,9 @@ export const usersTable = sqliteTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("user"),
+  phone: text("phone"),
+  profilePhotoUrl: text("profile_photo_url"),
+  isBlocked: integer("is_blocked", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
