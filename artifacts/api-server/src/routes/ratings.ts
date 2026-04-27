@@ -40,7 +40,7 @@ router.post("/reservations/:id/rate", requireAuth, async (req, res): Promise<voi
   }
   const parsed = RateReservationBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: JSON.parse(parsed.error.message).map((i: any) => `${i.path.join(".")}: ${i.message}`).join(" | ") });
     return;
   }
 

@@ -30,7 +30,7 @@ router.patch("/dashboard/users/:id", requireSupervisor, async (req, res): Promis
   }
   const parsed = UpdateUserBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: JSON.parse(parsed.error.message).map((i: any) => `${i.path.join(".")}: ${i.message}`).join(" | ") });
     return;
   }
 

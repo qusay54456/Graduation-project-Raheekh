@@ -97,7 +97,7 @@ router.get("/lots", async (req, res): Promise<void> => {
 router.post("/lots", requireSupervisor, async (req, res): Promise<void> => {
   const parsed = CreateLotBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: JSON.parse(parsed.error.message).map((i: any) => `${i.path.join(".")}: ${i.message}`).join(" | ") });
     return;
   }
 
@@ -144,7 +144,7 @@ router.patch("/lots/:id", requireSupervisor, async (req, res): Promise<void> => 
   }
   const parsed = UpdateLotBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: JSON.parse(parsed.error.message).map((i: any) => `${i.path.join(".")}: ${i.message}`).join(" | ") });
     return;
   }
 

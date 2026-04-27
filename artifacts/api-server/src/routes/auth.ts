@@ -35,6 +35,17 @@ const verifyCodeLimiter = rateLimit({
   keyGenerator: (req) => `${req.ip}:${(req.body as any)?.email ?? ""}`,
 });
 
+function formatZodError(err: { issues?: Array<{ path?: (string | number)[]; message?: string }> } | unknown): string {
+  const issues = (err as any)?.issues as Array<{ path?: (string | number)[]; message?: string }> | undefined;
+  if (!Array.isArray(issues) || issues.length === 0) return "بيانات غير صحيحة (Invalid input)";
+  return issues
+    .map((i) => {
+      const field = Array.isArray(i.path) && i.path.length > 0 ? i.path.join(".") : "field";
+      return `${field}: ${i.message ?? "invalid"}`;
+    })
+    .join(" | ");
+}
+
 function userToJson(user: typeof usersTable.$inferSelect) {
   return {
     id: user.id,
@@ -51,7 +62,7 @@ function userToJson(user: typeof usersTable.$inferSelect) {
 router.post("/auth/register", async (req, res): Promise<void> => {
   const parsed = RegisterBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 
@@ -91,7 +102,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 router.post("/auth/login", loginLimiter, async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
 
@@ -147,7 +158,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
 router.post("/auth/forgot-password", passwordResetLimiter, async (req, res): Promise<void> => {
   const parsed = ForgotPasswordBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
   const { email } = parsed.data;
@@ -192,7 +203,7 @@ router.post("/auth/forgot-password", passwordResetLimiter, async (req, res): Pro
 router.post("/auth/verify-code", verifyCodeLimiter, async (req, res): Promise<void> => {
   const parsed = VerifyResetCodeBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
   const { email, code } = parsed.data;
@@ -220,7 +231,7 @@ router.post("/auth/verify-code", verifyCodeLimiter, async (req, res): Promise<vo
 router.post("/auth/reset-password", verifyCodeLimiter, async (req, res): Promise<void> => {
   const parsed = ResetPasswordBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: formatZodError(parsed.error) });
     return;
   }
   const { email, code, newPassword } = parsed.data;

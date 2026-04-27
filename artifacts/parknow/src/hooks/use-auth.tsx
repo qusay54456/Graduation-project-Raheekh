@@ -24,6 +24,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const extractApiError = (error: any, fallback: string): string => {
+    // ApiError from the generated client puts the parsed JSON body on `.data`.
+    const fromBody =
+      error?.data?.error ??
+      error?.data?.message ??
+      error?.response?.data?.error;
+    if (typeof fromBody === "string" && fromBody.length > 0) return fromBody;
+    if (typeof error?.message === "string" && error.message.length > 0 && !error.message.startsWith("HTTP")) {
+      return error.message;
+    }
+    return fallback;
+  };
+
   const loginMutation = useLogin({
     mutation: {
       onSuccess: (data) => {
@@ -36,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       onError: (error: any) => {
         toast({
           title: "خطأ في تسجيل الدخول",
-          description: error.error || "Login failed",
+          description: extractApiError(error, "Login failed"),
           variant: "destructive",
         });
       }
@@ -55,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       onError: (error: any) => {
         toast({
           title: "خطأ في إنشاء الحساب",
-          description: error.error || "Registration failed",
+          description: extractApiError(error, "Registration failed"),
           variant: "destructive",
         });
       }

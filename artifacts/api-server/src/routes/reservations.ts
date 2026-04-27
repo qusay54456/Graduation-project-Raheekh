@@ -52,7 +52,7 @@ router.get("/reservations", requireAuth, async (req, res): Promise<void> => {
 router.post("/reservations", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateReservationBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+    res.status(400).json({ error: JSON.parse(parsed.error.message).map((i: any) => `${i.path.join(".")}: ${i.message}`).join(" | ") });
     return;
   }
 

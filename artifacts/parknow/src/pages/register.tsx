@@ -5,29 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
-import type { RegisterBodyRole } from "@workspace/api-client-react/src/generated/api.schemas";
 
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<RegisterBodyRole>("user");
+  const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 6) {
+      // Surface client-side validation immediately rather than round-tripping.
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    register({ data: { name, email, password, role } }, {
-      onSuccess: () => {
-        setLocation("/");
+    register(
+      { data: { name: name.trim(), email: email.trim().toLowerCase(), password, phone: phone.trim() || undefined } },
+      {
+        onSuccess: () => {
+          setLocation("/");
+        },
+        onSettled: () => setIsLoading(false),
       },
-      onSettled: () => setIsLoading(false)
-    });
+    );
   };
 
   return (
@@ -70,29 +76,32 @@ export default function Register() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور (Password)</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
+              <Label htmlFor="phone">رقم الهاتف (Phone) — اختياري</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="0599..."
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 dir="ltr"
                 className="text-left"
+                autoComplete="tel"
               />
             </div>
-            <div className="space-y-3 pt-2">
-              <Label>نوع الحساب (Account Type)</Label>
-              <RadioGroup value={role} onValueChange={(val) => setRole(val as RegisterBodyRole)} className="flex gap-4">
-                <div className="flex items-center space-x-2 space-x-reverse border rounded-md p-3 flex-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value="user" id="r-user" />
-                  <Label htmlFor="r-user" className="cursor-pointer flex-1">مستخدم (User)</Label>
-                </div>
-                <div className="flex items-center space-x-2 space-x-reverse border rounded-md p-3 flex-1 cursor-pointer hover:bg-muted/50 transition-colors">
-                  <RadioGroupItem value="supervisor" id="r-supervisor" />
-                  <Label htmlFor="r-supervisor" className="cursor-pointer flex-1">مشرف (Supervisor)</Label>
-                </div>
-              </RadioGroup>
+            <div className="space-y-2">
+              <Label htmlFor="password">كلمة المرور (Password)</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                dir="ltr"
+                className="text-left"
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-muted-foreground">6 أحرف على الأقل (at least 6 characters)</p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
