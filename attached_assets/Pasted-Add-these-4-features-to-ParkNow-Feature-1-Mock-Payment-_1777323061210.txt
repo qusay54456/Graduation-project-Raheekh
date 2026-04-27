@@ -1,0 +1,59 @@
+Add these 4 features to ParkNow:
+
+## Feature 1 - Mock Payment System:
+Add a fake payment flow when user confirms a booking:
+1. After selecting a spot, show payment page with:
+   - Booking summary (lot name, spot number, duration, total price in NIS)
+   - Payment method selection (fake options):
+     * بطاقة ائتمانية (Credit Card) - show card number/expiry/CVV fields
+     * PayPal (just a button)
+     * دفع عند الوصول (Pay on arrival)
+2. For credit card: show animated card preview that updates as user types
+3. After clicking "ادفع الآن", show loading spinner for 2 seconds
+4. Then show success page with:
+   - Green checkmark animation ✅
+   - Booking confirmation number
+   - QR code for the booking
+   - "إضافة لمحفظتي" button
+5. All payments are fake - no real money involved
+
+## Feature 2 - Ratings & Reviews System:
+1. After a booking status becomes "completed", user can rate the parking lot
+2. Rating page includes:
+   - Star rating (1-5 stars) with hover animation
+   - Text review (optional, max 200 chars)
+   - Submit button
+3. On parking lot details show:
+   - Average star rating with number of reviews
+   - List of recent reviews with user name and date
+4. Supervisor can see all reviews in dashboard
+5. Store ratings in new table: reviews (id, user_id, lot_id, rating, comment, created_at)
+
+## Feature 3 - Dark Mode:
+1. Add toggle button (🌙/☀️) in the navbar
+2. Dark mode colors:
+   - Background: #0f172a
+   - Cards: #1e293b
+   - Text: #e2e8f0
+   - Keep green (#00b359) as accent
+3. Save preference in localStorage so it persists after refresh
+4. Smooth transition animation when switching (0.3s)
+5. Apply dark mode to ALL pages including dashboard
+
+## Feature 4 - Arabic/English Language Switch:
+1. Add language toggle button (عربي/EN) in navbar next to dark mode
+2. Translate ALL text in the app to both Arabic and English:
+   - Navigation links
+   - Buttons
+   - Form labels and placeholders
+   - Error messages
+   - Success messages
+   - Dashboard labels
+3. Arabic: RTL layout (dir="rtl")
+4. English: LTR layout (dir="ltr")
+5. Save language preference in localStorage
+6. Default language: Arabic
+
+Make sure all 4 features work together smoothly and 
+the design stays consistent with dark navy (#1a2b4a) 
+and green (#00b359) color scheme.

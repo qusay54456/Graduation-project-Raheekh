@@ -13,8 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, Loader2, Search } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "@/hooks/use-i18n";
 
 export function BookingsTab() {
+  const { t, dir } = useTranslation();
   const [status, setStatus] = useState<string>("all");
   const [lotId, setLotId] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -53,34 +55,38 @@ export function BookingsTab() {
     window.open(`${baseUrl}/api/dashboard/reservations/export`, "_blank");
   };
 
+  const align = dir === "rtl" ? "text-right" : "text-left";
+  const iconSidePos = dir === "rtl" ? "right-2" : "left-2";
+  const iconPad = dir === "rtl" ? "pr-7" : "pl-7";
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 flex-wrap gap-2">
-        <CardTitle>إدارة الحجوزات (Bookings Management)</CardTitle>
-        <Button onClick={exportCsv} size="sm">
-          <Download className="ml-2 h-4 w-4" /> CSV
+        <CardTitle>{t("dashBookings.title")}</CardTitle>
+        <Button onClick={exportCsv} size="sm" data-testid="button-export-csv">
+          <Download className="me-2 h-4 w-4" /> CSV
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">الحالة</Label>
+            <Label className="text-xs">{t("dashBookings.status")}</Label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger dir="rtl"><SelectValue /></SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">الكل</SelectItem>
-                <SelectItem value="active">نشط</SelectItem>
-                <SelectItem value="completed">مكتمل</SelectItem>
-                <SelectItem value="cancelled">ملغي</SelectItem>
+              <SelectTrigger dir={dir}><SelectValue /></SelectTrigger>
+              <SelectContent dir={dir}>
+                <SelectItem value="all">{t("dashBookings.all")}</SelectItem>
+                <SelectItem value="active">{t("bookings.statusActive")}</SelectItem>
+                <SelectItem value="completed">{t("bookings.statusCompleted")}</SelectItem>
+                <SelectItem value="cancelled">{t("bookings.statusCancelled")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">الموقف</Label>
+            <Label className="text-xs">{t("dashBookings.lot")}</Label>
             <Select value={lotId} onValueChange={setLotId}>
-              <SelectTrigger dir="rtl"><SelectValue /></SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="all">جميع المواقف</SelectItem>
+              <SelectTrigger dir={dir}><SelectValue /></SelectTrigger>
+              <SelectContent dir={dir}>
+                <SelectItem value="all">{t("dashBookings.lotsAll")}</SelectItem>
                 {lots?.map((l) => (
                   <SelectItem key={l.id} value={l.id.toString()}>{l.name}</SelectItem>
                 ))}
@@ -88,18 +94,23 @@ export function BookingsTab() {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">من تاريخ</Label>
+            <Label className="text-xs">{t("dashBookings.dateFrom")}</Label>
             <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} dir="ltr" className="text-left" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">إلى تاريخ</Label>
+            <Label className="text-xs">{t("dashBookings.dateTo")}</Label>
             <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} dir="ltr" className="text-left" />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">بحث</Label>
+            <Label className="text-xs">{t("dashBookings.search")}</Label>
             <div className="relative">
-              <Search className="absolute right-2 top-2.5 h-3 w-3 text-muted-foreground pointer-events-none" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="اسم/إيميل..." className="pr-7" />
+              <Search className={`absolute ${iconSidePos} top-2.5 h-3 w-3 text-muted-foreground pointer-events-none`} />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("dashBookings.searchPlaceholder")}
+                className={iconPad}
+              />
             </div>
           </div>
         </div>
@@ -108,15 +119,15 @@ export function BookingsTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">المستخدم</TableHead>
-                <TableHead className="text-right">الإيميل</TableHead>
-                <TableHead className="text-right">الهاتف</TableHead>
-                <TableHead className="text-right">الموقف</TableHead>
-                <TableHead className="text-right">المقعد</TableHead>
-                <TableHead className="text-right">البداية</TableHead>
-                <TableHead className="text-right">النهاية</TableHead>
-                <TableHead className="text-right">السعر</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
+                <TableHead className={align}>{t("dashBookings.user")}</TableHead>
+                <TableHead className={align}>{t("common.email")}</TableHead>
+                <TableHead className={align}>{t("common.phone")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.lot")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.seat")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.start")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.end")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.price")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.status")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,7 +140,7 @@ export function BookingsTab() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center text-muted-foreground h-24">
-                    لا توجد حجوزات
+                    {t("dashBookings.empty")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -142,13 +153,15 @@ export function BookingsTab() {
                     <TableCell className="font-mono">{r.spotNumber}</TableCell>
                     <TableCell dir="ltr" className="text-left text-xs">{format(parseISO(r.startTime), "MMM d, HH:mm")}</TableCell>
                     <TableCell dir="ltr" className="text-left text-xs">{format(parseISO(r.endTime), "MMM d, HH:mm")}</TableCell>
-                    <TableCell className="font-bold">{r.totalPrice} ₪</TableCell>
+                    <TableCell className="font-bold">{r.totalPrice} {t("common.currency")}</TableCell>
                     <TableCell>
                       <Badge
                         variant={r.status === "active" ? "default" : r.status === "cancelled" ? "destructive" : "outline"}
                         className={r.status === "active" ? "bg-secondary text-secondary-foreground" : ""}
                       >
-                        {r.status}
+                        {r.status === "active" && t("bookings.statusActive")}
+                        {r.status === "completed" && t("bookings.statusCompleted")}
+                        {r.status === "cancelled" && t("bookings.statusCancelled")}
                       </Badge>
                     </TableCell>
                   </TableRow>

@@ -1,10 +1,9 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import {
   useGetLot,
   getGetLotQueryKey,
   useGetLotSpots,
-  useCreateReservation,
   getGetLotSpotsQueryKey,
   useGetLotRatings,
   getGetLotRatingsQueryKey,
@@ -13,16 +12,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, MapPin, CheckCircle2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { addHours } from "date-fns";
+import { Loader2, MapPin, CheckCircle2, ArrowRight } from "lucide-react";
 import { StarRating } from "@/components/star-rating";
+import { useTranslation } from "@/hooks/use-i18n";
+import { pendingBooking } from "@/lib/payment-storage";
 
 export default function Book() {
   const [, params] = useRoute("/book/:id");
   const lotId = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const { t, dir } = useTranslation();
 
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [durationHours, setDurationHours] = useState<string>("1");
@@ -39,29 +38,26 @@ export default function Book() {
     query: { enabled: !!lotId, queryKey: getGetLotRatingsQueryKey(lotId) },
   });
 
-  const createReservation = useCreateReservation({
-    mutation: {
-      onSuccess: () => {
-        toast({ title: "تم الحجز بنجاح", description: "Reservation created successfully" });
-        setLocation("/my-bookings");
-      },
-      onError: (err: any) => {
-        toast({ title: "خطأ في الحجز", description: err.error || "Failed to create reservation", variant: "destructive" });
-      },
-    },
-  });
-
   const totalPrice = useMemo(() => {
     if (!lot) return 0;
     return Math.round(parseInt(durationHours, 10) * lot.pricePerHour * 100) / 100;
   }, [durationHours, lot]);
 
-  const handleBook = () => {
-    if (!selectedSpotId) return;
-    const now = new Date();
-    const startTime = now.toISOString();
-    const endTime = addHours(now, parseInt(durationHours, 10)).toISOString();
-    createReservation.mutate({ data: { spotId: selectedSpotId, startTime, endTime } });
+  const handleProceedToPayment = () => {
+    if (!selectedSpotId || !lot) return;
+    const selectedSpot = spots?.find((s) => s.id === selectedSpotId);
+    if (!selectedSpot) return;
+    pendingBooking.set({
+      lotId: lot.id,
+      lotName: lot.name,
+      lotLocation: lot.location,
+      spotId: selectedSpotId,
+      spotNumber: selectedSpot.spotNumber,
+      durationHours: parseInt(durationHours, 10),
+      pricePerHour: lot.pricePerHour,
+      totalPrice,
+    });
+    setLocation("/payment");
   };
 
   if (lotLoading || spotsLoading) {
@@ -75,8 +71,8 @@ export default function Book() {
   if (!lot) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-bold">الموقف غير موجود</h2>
-        <Button className="mt-4" onClick={() => setLocation("/")}>العودة للرئيسية</Button>
+        <h2 className="text-2xl font-bold">{t("book.notFound")}</h2>
+        <Button className="mt-4" onClick={() => setLocation("/")}>{t("book.backHome")}</Button>
       </div>
     );
   }
@@ -84,9 +80,9 @@ export default function Book() {
   if (!lot.isActive) {
     return (
       <div className="container mx-auto px-4 py-8 text-center max-w-md">
-        <h2 className="text-2xl font-bold">هذا الموقف غير متاح حالياً</h2>
-        <p className="text-muted-foreground my-4">This lot is currently inactive.</p>
-        <Button onClick={() => setLocation("/")}>العودة للرئيسية</Button>
+        <h2 className="text-2xl font-bold">{t("book.inactive")}</h2>
+        <p className="text-muted-foreground my-4">{t("book.inactiveDesc")}</p>
+        <Button onClick={() => setLocation("/")}>{t("book.backHome")}</Button>
       </div>
     );
   }
@@ -99,10 +95,12 @@ export default function Book() {
         <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">{lot.name}</h1>
         <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
           <div className="flex items-center text-sm">
-            <MapPin className="h-4 w-4 ml-1" />
+            <MapPin className="h-4 w-4 me-1" />
             {lot.location}
           </div>
-          <div className="text-sm font-bold text-primary">{lot.pricePerHour} ₪/ساعة</div>
+          <div className="text-sm font-bold text-primary">
+            {lot.pricePerHour} {t("common.currency")}{t("home.perHour")}
+          </div>
           <StarRating value={lot.avgRating} count={lot.ratingCount} showValue size="sm" />
         </div>
       </div>
@@ -111,8 +109,8 @@ export default function Book() {
         <div className="md:col-span-2 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>اختر الموقف (Select a Spot)</CardTitle>
-              <CardDescription>المواقف الخضراء متاحة للحجز</CardDescription>
+              <CardTitle>{t("book.spotInfo")}</CardTitle>
+              <CardDescription>{t("book.spotInfoDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
@@ -121,6 +119,7 @@ export default function Book() {
                     key={spot.id}
                     disabled={spot.status !== "available"}
                     onClick={() => setSelectedSpotId(spot.id)}
+                    data-testid={`button-spot-${spot.id}`}
                     className={`relative flex items-center justify-center h-16 rounded-md border-2 font-mono text-lg font-bold transition-all ${
                       spot.status === "available"
                         ? selectedSpotId === spot.id
@@ -139,15 +138,15 @@ export default function Book() {
               <div className="flex flex-wrap items-center justify-center gap-4 mt-8 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-secondary/20 border-2 border-secondary/50"></div>
-                  <span>متاح</span>
+                  <span>{t("book.legendAvailable")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-primary border-2 border-primary"></div>
-                  <span>محدد</span>
+                  <span>{t("book.legendSelected")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded bg-destructive/10 border-2 border-destructive/30"></div>
-                  <span>محجوز</span>
+                  <span>{t("book.legendReserved")}</span>
                 </div>
               </div>
             </CardContent>
@@ -156,7 +155,7 @@ export default function Book() {
           {ratings && ratings.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>التقييمات (Reviews)</CardTitle>
+                <CardTitle>{t("book.reviews")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {ratings.slice(0, 5).map((r) => (
@@ -176,53 +175,59 @@ export default function Book() {
         <div className="space-y-4">
           <Card className="md:sticky md:top-20">
             <CardHeader>
-              <CardTitle>تفاصيل الحجز</CardTitle>
+              <CardTitle>{t("book.summary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>الموقف المحدد</Label>
-                <div className="text-2xl font-mono font-bold text-primary bg-muted p-3 rounded-md text-center">
+                <Label>{t("book.selectedSpot")}</Label>
+                <div className="text-2xl font-mono font-bold text-primary bg-muted p-3 rounded-md text-center" data-testid="text-selected-spot">
                   {selectedSpot ? selectedSpot.spotNumber : "---"}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>المدة (Duration)</Label>
+                <Label>{t("book.durationLabel")}</Label>
                 <Select value={durationHours} onValueChange={setDurationHours}>
-                  <SelectTrigger dir="rtl">
-                    <SelectValue placeholder="اختر المدة" />
+                  <SelectTrigger dir={dir} data-testid="select-duration">
+                    <SelectValue placeholder={t("book.durationPlaceholder")} />
                   </SelectTrigger>
-                  <SelectContent dir="rtl">
-                    <SelectItem value="1">ساعة واحدة</SelectItem>
-                    <SelectItem value="2">ساعتان</SelectItem>
-                    <SelectItem value="3">3 ساعات</SelectItem>
-                    <SelectItem value="4">4 ساعات</SelectItem>
-                    <SelectItem value="6">6 ساعات</SelectItem>
-                    <SelectItem value="12">نصف يوم</SelectItem>
-                    <SelectItem value="24">يوم كامل</SelectItem>
+                  <SelectContent dir={dir}>
+                    <SelectItem value="1">{t("book.duration1")}</SelectItem>
+                    <SelectItem value="2">{t("book.duration2")}</SelectItem>
+                    <SelectItem value="3">{t("book.duration3")}</SelectItem>
+                    <SelectItem value="4">{t("book.duration4")}</SelectItem>
+                    <SelectItem value="6">{t("book.duration6")}</SelectItem>
+                    <SelectItem value="12">{t("book.duration12")}</SelectItem>
+                    <SelectItem value="24">{t("book.duration24")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="border-t pt-4 space-y-1">
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>السعر بالساعة</span>
-                  <span>{lot.pricePerHour} ₪</span>
+                  <span>{t("book.pricePerHour")}</span>
+                  <span>{lot.pricePerHour} {t("common.currency")}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>المدة</span>
-                  <span>{durationHours} ساعة</span>
+                  <span>{t("book.durationLabel")}</span>
+                  <span>{durationHours} {t("book.durationSuffix")}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-primary pt-2">
-                  <span>الإجمالي</span>
-                  <span>{totalPrice} ₪</span>
+                  <span>{t("book.total")}</span>
+                  <span data-testid="text-book-total">{totalPrice} {t("common.currency")}</span>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" size="lg" disabled={!selectedSpotId || createReservation.isPending} onClick={handleBook}>
-                {createReservation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                تأكيد الحجز
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={!selectedSpotId}
+                onClick={handleProceedToPayment}
+                data-testid="button-confirm-booking"
+              >
+                {t("book.bookButton")}
+                <ArrowRight className="h-4 w-4 mx-2 rtl:rotate-180" />
               </Button>
             </CardFooter>
           </Card>

@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowRight, KeyRound, Mail, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-i18n";
 
 type Step = "email" | "code" | "password" | "done";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -25,34 +27,49 @@ export default function ForgotPassword() {
 
   const sendCode = (e: React.FormEvent) => {
     e.preventDefault();
-    forgot.mutate({ data: { email } }, {
-      onSuccess: (res) => {
-        setDevCode(res.devCode ?? null);
-        setStep("code");
-        toast({ title: "تم إرسال الرمز", description: res.devCode ? `Dev code: ${res.devCode}` : "Check your email" });
+    forgot.mutate(
+      { data: { email } },
+      {
+        onSuccess: (res) => {
+          setDevCode(res.devCode ?? null);
+          setStep("code");
+          toast({
+            title: t("toast.codeSent"),
+            description: res.devCode ? `${t("forgot.devCodeLabel")} ${res.devCode}` : t("forgot.emailSubtitle"),
+          });
+        },
+        onError: (e: any) =>
+          toast({ title: t("common.error"), description: e?.error || t("toast.genericFail"), variant: "destructive" }),
       },
-      onError: (e: any) => toast({ title: "خطأ", description: e.error || "Failed", variant: "destructive" }),
-    });
+    );
   };
 
   const checkCode = (e: React.FormEvent) => {
     e.preventDefault();
-    verify.mutate({ data: { email, code } }, {
-      onSuccess: () => setStep("password"),
-      onError: (e: any) => toast({ title: "رمز غير صحيح", description: e.error || "Invalid code", variant: "destructive" }),
-    });
+    verify.mutate(
+      { data: { email, code } },
+      {
+        onSuccess: () => setStep("password"),
+        onError: (e: any) =>
+          toast({ title: t("toast.invalidCode"), description: e?.error || t("toast.invalidCode"), variant: "destructive" }),
+      },
+    );
   };
 
   const submitPassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      toast({ title: "خطأ", description: "Password must be at least 6 characters", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("register.passwordTooShort"), variant: "destructive" });
       return;
     }
-    reset.mutate({ data: { email, code, newPassword } }, {
-      onSuccess: () => setStep("done"),
-      onError: (e: any) => toast({ title: "خطأ", description: e.error || "Failed", variant: "destructive" }),
-    });
+    reset.mutate(
+      { data: { email, code, newPassword } },
+      {
+        onSuccess: () => setStep("done"),
+        onError: (e: any) =>
+          toast({ title: t("common.error"), description: e?.error || t("toast.genericFail"), variant: "destructive" }),
+      },
+    );
   };
 
   return (
@@ -68,16 +85,16 @@ export default function ForgotPassword() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">
-            {step === "email" && "نسيت كلمة المرور"}
-            {step === "code" && "أدخل رمز التحقق"}
-            {step === "password" && "كلمة المرور الجديدة"}
-            {step === "done" && "تم بنجاح!"}
+            {step === "email" && t("forgot.emailTitle")}
+            {step === "code" && t("forgot.codeTitle")}
+            {step === "password" && t("forgot.passwordTitle")}
+            {step === "done" && t("forgot.doneTitle")}
           </CardTitle>
           <CardDescription>
-            {step === "email" && "Enter your email to receive a verification code"}
-            {step === "code" && `Code sent to ${email}`}
-            {step === "password" && "Enter your new password"}
-            {step === "done" && "Password reset successfully"}
+            {step === "email" && t("forgot.emailSubtitle")}
+            {step === "code" && `${t("forgot.codeSubtitle")} ${email}`}
+            {step === "password" && t("forgot.passwordSubtitle")}
+            {step === "done" && t("forgot.doneSubtitle")}
           </CardDescription>
         </CardHeader>
 
@@ -85,17 +102,26 @@ export default function ForgotPassword() {
           <form onSubmit={sendCode}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني (Email)</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required dir="ltr" className="text-left" />
+                <Label htmlFor="email">{t("common.email")}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  dir="ltr"
+                  className="text-left"
+                  data-testid="input-forgot-email"
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={forgot.isPending}>
-                {forgot.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                إرسال الرمز (Send Code)
+              <Button type="submit" className="w-full" disabled={forgot.isPending} data-testid="button-send-code">
+                {forgot.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {t("forgot.sendCode")}
               </Button>
               <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">
-                <ArrowRight className="inline h-3 w-3 mr-1" /> العودة لتسجيل الدخول
+                <ArrowRight className="inline h-3 w-3 mx-1 rtl:rotate-180" /> {t("forgot.backToLogin")}
               </Link>
             </CardFooter>
           </form>
@@ -106,24 +132,36 @@ export default function ForgotPassword() {
             <CardContent className="space-y-4">
               {devCode && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 text-sm">
-                  <strong>Dev mode:</strong> Code is <code className="font-mono text-lg">{devCode}</code>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Configure SMTP_HOST/SMTP_USER/SMTP_PASS to actually send email.
-                  </div>
+                  <strong>{t("forgot.devCodeLabel")}</strong>{" "}
+                  <code className="font-mono text-lg">{devCode}</code>
+                  <div className="text-xs text-muted-foreground mt-1">{t("forgot.devCodeHint")}</div>
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="code">رمز التحقق (6 أرقام - صالح لمدة 10 دقائق)</Label>
-                <Input id="code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required dir="ltr" className="text-center text-2xl font-mono tracking-widest" maxLength={6} />
+                <Label htmlFor="code">{t("forgot.codeLabel")}</Label>
+                <Input
+                  id="code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  required
+                  dir="ltr"
+                  className="text-center text-2xl font-mono tracking-widest"
+                  maxLength={6}
+                  data-testid="input-verify-code"
+                />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={verify.isPending || code.length !== 6}>
-                {verify.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                تحقق من الرمز (Verify)
+              <Button type="submit" className="w-full" disabled={verify.isPending || code.length !== 6} data-testid="button-verify-code">
+                {verify.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {t("forgot.verify")}
               </Button>
-              <button type="button" className="text-sm text-muted-foreground hover:text-primary" onClick={() => setStep("email")}>
-                Resend or change email
+              <button
+                type="button"
+                className="text-sm text-muted-foreground hover:text-primary"
+                onClick={() => setStep("email")}
+              >
+                {t("forgot.resend")}
               </button>
             </CardFooter>
           </form>
@@ -133,14 +171,23 @@ export default function ForgotPassword() {
           <form onSubmit={submitPassword}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">كلمة المرور الجديدة (6+ أحرف)</Label>
-                <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required dir="ltr" className="text-left" />
+                <Label htmlFor="newPassword">{t("forgot.passwordHint")}</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  dir="ltr"
+                  className="text-left"
+                  data-testid="input-new-password"
+                />
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={reset.isPending}>
-                {reset.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                تعيين كلمة المرور (Set Password)
+              <Button type="submit" className="w-full" disabled={reset.isPending} data-testid="button-reset-password">
+                {reset.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {t("forgot.setPassword")}
               </Button>
             </CardFooter>
           </form>
@@ -148,9 +195,9 @@ export default function ForgotPassword() {
 
         {step === "done" && (
           <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.</p>
-            <Button className="w-full" onClick={() => setLocation("/login")}>
-              تسجيل الدخول (Sign In)
+            <p className="text-muted-foreground">{t("forgot.doneText")}</p>
+            <Button className="w-full" onClick={() => setLocation("/login")} data-testid="button-go-login">
+              {t("forgot.signIn")}
             </Button>
           </CardContent>
         )}

@@ -8,41 +8,45 @@ import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/use-i18n";
 import { format, parseISO } from "date-fns";
 
 export function UsersTab() {
+  const { t, dir } = useTranslation();
   const { data: users, isLoading } = useListUsers();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user: me } = useAuth();
+  const align = dir === "rtl" ? "text-right" : "text-left";
 
   const update = useUpdateUser({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-        toast({ title: "تم", description: "User updated" });
+        toast({ title: t("common.success"), description: t("common.success") });
       },
-      onError: (e: any) => toast({ title: "خطأ", description: e?.error || "Failed", variant: "destructive" }),
+      onError: (e: any) =>
+        toast({ title: t("common.error"), description: e?.error || t("toast.genericFail"), variant: "destructive" }),
     },
   });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>إدارة المستخدمين (Users Management)</CardTitle>
+        <CardTitle>{t("dashUsers.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">الاسم</TableHead>
-                <TableHead className="text-right">الإيميل</TableHead>
-                <TableHead className="text-right">الهاتف</TableHead>
-                <TableHead className="text-right">الدور</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">انضم</TableHead>
-                <TableHead className="text-right">إجراءات</TableHead>
+                <TableHead className={align}>{t("common.name")}</TableHead>
+                <TableHead className={align}>{t("common.email")}</TableHead>
+                <TableHead className={align}>{t("common.phone")}</TableHead>
+                <TableHead className={align}>{t("dashUsers.role")}</TableHead>
+                <TableHead className={align}>{t("dashBookings.status")}</TableHead>
+                <TableHead className={align}>{t("dashUsers.joined")}</TableHead>
+                <TableHead className={align}>{t("dashUsers.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -56,20 +60,23 @@ export function UsersTab() {
                 users?.map((u) => {
                   const isMe = u.id === me?.id;
                   const isAdminRow = u.role === "admin";
-                  // Only admins may edit admin rows. Supervisors viewing the table see
-                  // admin accounts as read-only — matches backend authorization.
                   const canEditRow = !isMe && (!isAdminRow || me?.role === "admin");
                   return (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">
-                        {u.name} {isMe && <Badge variant="outline" className="text-[10px] ml-1">أنت</Badge>}
+                        {u.name}{" "}
+                        {isMe && (
+                          <Badge variant="outline" className="text-[10px] ms-1">
+                            {t("dashUsers.meBadge")}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell dir="ltr" className="text-left text-xs">{u.email}</TableCell>
                       <TableCell dir="ltr" className="text-left text-xs">{u.phone ?? "—"}</TableCell>
                       <TableCell>
                         {isAdminRow ? (
                           <Badge variant="outline" className="border-primary/40 text-primary font-bold">
-                            مدير (Admin)
+                            {t("dashUsers.adminBadge")}
                           </Badge>
                         ) : (
                           <Select
@@ -77,25 +84,29 @@ export function UsersTab() {
                             disabled={!canEditRow || update.isPending}
                             onValueChange={(v) => update.mutate({ id: u.id, data: { role: v } })}
                           >
-                            <SelectTrigger dir="rtl" className="w-32"><SelectValue /></SelectTrigger>
-                            <SelectContent dir="rtl">
-                              <SelectItem value="user">مستخدم</SelectItem>
-                              <SelectItem value="supervisor">مشرف</SelectItem>
+                            <SelectTrigger dir={dir} className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent dir={dir}>
+                              <SelectItem value="user">{t("dashUsers.roleUser")}</SelectItem>
+                              <SelectItem value="supervisor">{t("dashUsers.roleSupervisor")}</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
                       </TableCell>
                       <TableCell>
                         {u.isBlocked ? (
-                          <Badge variant="destructive">محظور</Badge>
+                          <Badge variant="destructive">{t("dashUsers.blocked")}</Badge>
                         ) : (
-                          <Badge className="bg-secondary">نشط</Badge>
+                          <Badge className="bg-secondary">{t("bookings.statusActive")}</Badge>
                         )}
                       </TableCell>
-                      <TableCell dir="ltr" className="text-left text-xs">{format(parseISO(u.createdAt), "MMM d, yyyy")}</TableCell>
+                      <TableCell dir="ltr" className="text-left text-xs">
+                        {format(parseISO(u.createdAt), "MMM d, yyyy")}
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">حظر</span>
+                          <span className="text-xs text-muted-foreground">{t("dashUsers.block")}</span>
                           <Switch
                             checked={u.isBlocked}
                             disabled={!canEditRow || update.isPending}

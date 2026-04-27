@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/use-i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ function extractApiError(error: unknown, fallback: string): string {
 }
 
 export default function Register() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,19 +34,22 @@ export default function Register() {
     e.preventDefault();
     setErrorMsg(null);
     if (password.length < 6) {
-      setErrorMsg("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      setErrorMsg(t("register.passwordTooShort"));
       return;
     }
     setIsLoading(true);
     register(
-      { data: { name: name.trim(), email: email.trim().toLowerCase(), password, phone: phone.trim() || undefined } },
       {
-        onSuccess: () => {
-          setLocation("/");
+        data: {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+          phone: phone.trim() || undefined,
         },
-        onError: (err) => {
-          setErrorMsg(extractApiError(err, "تعذّر إنشاء الحساب — حاول مرة أخرى"));
-        },
+      },
+      {
+        onSuccess: () => setLocation("/"),
+        onError: (err) => setErrorMsg(extractApiError(err, t("register.errorFallback"))),
         onSettled: () => setIsLoading(false),
       },
     );
@@ -59,51 +64,52 @@ export default function Register() {
               🅿
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">إنشاء حساب جديد</CardTitle>
-          <CardDescription>
-            Create a new ParkNow account
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold">{t("register.title")}</CardTitle>
+          <CardDescription>{t("register.subtitle")}</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">الاسم الكامل (Full Name)</Label>
-              <Input 
-                id="name" 
-                placeholder="Ahmad..." 
+              <Label htmlFor="name">{t("common.name")}</Label>
+              <Input
+                id="name"
+                placeholder="Ahmad…"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required 
+                required
+                data-testid="input-register-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني (Email)</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
+              <Label htmlFor="email">{t("common.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
                 dir="ltr"
                 className="text-left"
+                data-testid="input-register-email"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف (Phone) — اختياري</Label>
+              <Label htmlFor="phone">{t("register.phoneOptional")}</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="0599..."
+                placeholder="0599…"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 dir="ltr"
                 className="text-left"
                 autoComplete="tel"
+                data-testid="input-register-phone"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور (Password)</Label>
+              <Label htmlFor="password">{t("common.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -114,8 +120,9 @@ export default function Register() {
                 dir="ltr"
                 className="text-left"
                 autoComplete="new-password"
+                data-testid="input-register-password"
               />
-              <p className="text-xs text-muted-foreground">6 أحرف على الأقل (at least 6 characters)</p>
+              <p className="text-xs text-muted-foreground">{t("register.passwordHint")}</p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
@@ -130,13 +137,13 @@ export default function Register() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-register-submit">
-              {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              إنشاء حساب (Register)
+              {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t("register.create")}
             </Button>
             <div className="text-sm text-center text-muted-foreground">
-              لديك حساب بالفعل؟ {" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
-                تسجيل الدخول (Login)
+              {t("register.haveAccount")}{" "}
+              <Link href="/login" className="text-primary hover:underline font-medium" data-testid="link-go-login">
+                {t("register.login")}
               </Link>
             </div>
           </CardFooter>

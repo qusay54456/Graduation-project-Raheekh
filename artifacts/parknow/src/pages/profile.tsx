@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useUpdateProfile, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/use-i18n";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -31,16 +33,17 @@ export default function Profile() {
   const update = useUpdateProfile({
     mutation: {
       onSuccess: () => {
-        toast({ title: "تم الحفظ", description: "Profile updated" });
+        toast({ title: t("profile.saved"), description: t("profile.saved") });
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       },
-      onError: (e: any) => toast({ title: "خطأ", description: e.error || "Failed", variant: "destructive" }),
+      onError: (e: any) =>
+        toast({ title: t("common.error"), description: e?.error || t("toast.genericFail"), variant: "destructive" }),
     },
   });
 
   const handlePhotoSelect = (file: File) => {
     if (file.size > 1024 * 1024) {
-      toast({ title: "ملف كبير جداً", description: "Maximum 1MB", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("profile.fileTooLarge"), variant: "destructive" });
       return;
     }
     const reader = new FileReader();
@@ -63,13 +66,13 @@ export default function Profile() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-3xl font-bold text-primary mb-6 border-b pb-3">الملف الشخصي (My Profile)</h1>
+      <h1 className="text-3xl font-bold text-primary mb-6 border-b pb-3">{t("profile.title")}</h1>
 
       <form onSubmit={save}>
         <Card>
           <CardHeader>
-            <CardTitle>المعلومات الشخصية</CardTitle>
-            <CardDescription>Update your name, phone, and profile photo.</CardDescription>
+            <CardTitle>{t("profile.info")}</CardTitle>
+            <CardDescription>{t("profile.infoDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
@@ -90,37 +93,52 @@ export default function Profile() {
                     if (f) handlePhotoSelect(f);
                   }}
                 />
-                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
-                  <Camera className="ml-2 h-4 w-4" />
-                  تغيير الصورة
+                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} data-testid="button-change-photo">
+                  <Camera className="me-2 h-4 w-4" />
+                  {t("profile.changePhoto")}
                 </Button>
                 {photoUrl && (
-                  <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => setPhotoUrl(null)}>
-                    إزالة
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() => setPhotoUrl(null)}
+                    data-testid="button-remove-photo"
+                  >
+                    {t("profile.remove")}
                   </Button>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">الاسم</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Label htmlFor="name">{t("common.name")}</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required data-testid="input-profile-name" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Label htmlFor="email">{t("common.email")}</Label>
               <Input id="email" value={user.email} disabled dir="ltr" className="text-left bg-muted" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" className="text-left" placeholder="+972 ..." />
+              <Label htmlFor="phone">{t("common.phone")}</Label>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                dir="ltr"
+                className="text-left"
+                placeholder="+972 …"
+                data-testid="input-profile-phone"
+              />
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={update.isPending}>
-              {update.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              حفظ التغييرات
+            <Button type="submit" disabled={update.isPending} data-testid="button-save-profile">
+              {update.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t("profile.saveChanges")}
             </Button>
           </CardFooter>
         </Card>

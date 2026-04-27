@@ -6,10 +6,12 @@ import { Loader2 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { useTranslation } from "@/hooks/use-i18n";
 
 const COLORS = ["#1a2b4a", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 export function ChartsTab() {
+  const { t, dir } = useTranslation();
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
 
   const { data: revenue, isLoading: revLoading } = useGetRevenue(
@@ -24,22 +26,25 @@ export function ChartsTab() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>الإيرادات (Revenue)</CardTitle>
+            <CardTitle>{t("dashCharts.revenue")}</CardTitle>
             <CardDescription>
-              الإجمالي: <span className="font-bold text-primary">{revenue?.total ?? 0} ₪</span>
+              {t("dashCharts.total")}:{" "}
+              <span className="font-bold text-primary">
+                {revenue?.total ?? 0} {t("common.currency")}
+              </span>
             </CardDescription>
           </div>
-          <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as any)} dir="rtl">
-            <ToggleGroupItem value="daily" size="sm">يومي</ToggleGroupItem>
-            <ToggleGroupItem value="weekly" size="sm">أسبوعي</ToggleGroupItem>
-            <ToggleGroupItem value="monthly" size="sm">شهري</ToggleGroupItem>
+          <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as any)} dir={dir}>
+            <ToggleGroupItem value="daily" size="sm">{t("dashCharts.daily")}</ToggleGroupItem>
+            <ToggleGroupItem value="weekly" size="sm">{t("dashCharts.weekly")}</ToggleGroupItem>
+            <ToggleGroupItem value="monthly" size="sm">{t("dashCharts.monthly")}</ToggleGroupItem>
           </ToggleGroup>
         </CardHeader>
         <CardContent>
           {revLoading ? (
             <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto my-12" />
           ) : !revenue?.series?.length ? (
-            <p className="text-center text-muted-foreground py-12">لا توجد بيانات إيرادات بعد</p>
+            <p className="text-center text-muted-foreground py-12">{t("dashCharts.noRevenue")}</p>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={revenue.series}>
@@ -48,8 +53,8 @@ export function ChartsTab() {
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#1a2b4a" strokeWidth={2} name="الإيراد (₪)" />
-                <Line type="monotone" dataKey="bookings" stroke="#10b981" strokeWidth={2} name="الحجوزات" />
+                <Line type="monotone" dataKey="revenue" stroke="#1a2b4a" strokeWidth={2} name={`${t("dashCharts.revenueLine")} (${t("common.currency")})`} />
+                <Line type="monotone" dataKey="bookings" stroke="#10b981" strokeWidth={2} name={t("dashCharts.bookings")} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -59,13 +64,13 @@ export function ChartsTab() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>الأكثر حجزاً (Most Booked Lots)</CardTitle>
+            <CardTitle>{t("dashCharts.mostBooked")}</CardTitle>
           </CardHeader>
           <CardContent>
             {popLoading ? (
               <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto my-12" />
             ) : !popular?.length ? (
-              <p className="text-center text-muted-foreground py-12">لا توجد بيانات</p>
+              <p className="text-center text-muted-foreground py-12">{t("dashCharts.noData")}</p>
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
@@ -92,7 +97,7 @@ export function ChartsTab() {
 
         <Card>
           <CardHeader>
-            <CardTitle>أوقات الذروة (Peak Hours)</CardTitle>
+            <CardTitle>{t("dashCharts.peakHours")}</CardTitle>
           </CardHeader>
           <CardContent>
             {peakLoading ? (
