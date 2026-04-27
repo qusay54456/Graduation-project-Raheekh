@@ -25,7 +25,19 @@ export async function sendEmail(opts: {
   html?: string;
 }): Promise<{ sent: boolean; previewCode?: string }> {
   if (!transporter) {
-    logger.info({ to: opts.to, subject: opts.subject, body: opts.text }, "[EMAIL DEV MODE] Would send:");
+    // SECURITY: never log the email body — it may contain OTPs, password reset
+    // codes, or other sensitive material. Log metadata only.
+    if (process.env.NODE_ENV === "production") {
+      logger.error(
+        { to: opts.to, subject: opts.subject },
+        "[EMAIL] SMTP not configured in production — email NOT sent",
+      );
+    } else {
+      logger.info(
+        { to: opts.to, subject: opts.subject },
+        "[EMAIL DEV MODE] Would send (body redacted; use API response devCode for testing)",
+      );
+    }
     return { sent: false };
   }
   try {
@@ -38,7 +50,7 @@ export async function sendEmail(opts: {
     });
     return { sent: true };
   } catch (err) {
-    logger.error({ err }, "Failed to send email");
+    logger.error({ err, to: opts.to, subject: opts.subject }, "Failed to send email");
     return { sent: false };
   }
 }

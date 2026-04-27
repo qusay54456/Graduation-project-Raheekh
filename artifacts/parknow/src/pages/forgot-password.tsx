@@ -113,7 +113,7 @@ export default function ForgotPassword() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="code">رمز التحقق (6 أرقام)</Label>
+                <Label htmlFor="code">رمز التحقق (6 أرقام - صالح لمدة 10 دقائق)</Label>
                 <Input id="code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required dir="ltr" className="text-center text-2xl font-mono tracking-widest" maxLength={6} />
               </div>
             </CardContent>

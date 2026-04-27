@@ -5,6 +5,8 @@ import { db, usersTable, passwordResetCodesTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { RegisterBody, LoginBody, ForgotPasswordBody, VerifyResetCodeBody, ResetPasswordBody } from "@workspace/api-zod";
 import { sendEmail, emailEnabled } from "../lib/email";
+import { welcomeEmailTemplate, passwordResetEmailTemplate } from "../lib/email-templates";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -93,6 +95,16 @@ router.post("/auth/register", async (req, res): Promise<void> => {
 
   req.session.userId = user.id;
 
+  // Fire-and-forget welcome email so registration is not blocked by SMTP.
+  void (async () => {
+    try {
+      const tpl = welcomeEmailTemplate({ name: user.name, email: user.email });
+      await sendEmail({ to: user.email, subject: tpl.subject, text: tpl.text, html: tpl.html });
+    } catch (err) {
+      logger.error({ err, userId: user.id }, "Failed to send welcome email");
+    }
+  })();
+
   res.status(201).json({
     user: userToJson(user),
     message: "تم إنشاء الحساب بنجاح",
@@ -178,15 +190,16 @@ router.post("/auth/forgot-password", passwordResetLimiter, async (req, res): Pro
     .where(and(eq(passwordResetCodesTable.email, email), eq(passwordResetCodesTable.used, false)));
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await db.insert(passwordResetCodesTable).values({ email, code, expiresAt });
 
+  const tpl = passwordResetEmailTemplate({ code, minutes: 10 });
   const result = await sendEmail({
     to: email,
-    subject: "ParkNow - رمز إعادة تعيين كلمة المرور",
-    text: `رمز التحقق الخاص بك: ${code}\n\nصالح لمدة 15 دقيقة.\n\nYour ParkNow verification code: ${code}\nValid for 15 minutes.`,
-    html: `<div style="font-family:sans-serif;direction:rtl"><h2>إعادة تعيين كلمة المرور</h2><p>رمز التحقق الخاص بك:</p><h1 style="background:#1a2b4a;color:white;padding:16px;text-align:center;letter-spacing:4px;border-radius:8px">${code}</h1><p>صالح لمدة 15 دقيقة.</p></div>`,
+    subject: tpl.subject,
+    text: tpl.text,
+    html: tpl.html,
   });
 
   // SECURITY: Only expose the code in the API response in development AND only

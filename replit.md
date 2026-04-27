@@ -95,3 +95,17 @@ All ID columns use `integer().primaryKey({ autoIncrement: true })` (SQLite analo
 After `orval --config ./orval.config.ts`, the `lib/api-zod/src/index.ts` must only export from `./generated/api` (the codegen script handles this).
 
 Orval names body schemas after operationIds, e.g. `verifyResetCode` → `VerifyResetCodeBody`, `rateReservation` → `RateReservationBody`.
+
+## Email (Apr 2026 update)
+
+- Branded RTL HTML email templates live in `artifacts/api-server/src/lib/email-templates.ts` (`welcomeEmailTemplate`, `passwordResetEmailTemplate`).
+- Brand colors: navy `#1a2b4a`, green `#00b359`. Templates include logo block, footer, and proper escaping (`escapeHtml`).
+- Welcome email is sent fire-and-forget after successful registration so SMTP problems can never break signup.
+- Password reset OTP: 6-digit code, 10-minute expiry.
+- `sendEmail()` falls back to console-logging metadata only (`to` + `subject`) when SMTP is not configured. **Never logs the body** — this prevents OTPs from leaking into logs.
+- Configure real delivery by setting `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` (and optionally `SMTP_PORT`, `SMTP_FROM`) as secrets, then restart the API server.
+
+## Seed (Apr 2026 update)
+
+- 25 parking lots across 10 Palestinian West Bank cities (Ramallah/البيرة, Nablus, Hebron, Bethlehem, Jenin, Tulkarm, Qalqilya, Jericho, Salfit, Tubas), 339 spots total.
+- Run `pnpm --filter @workspace/db run seed` to reset + reseed. Cleanup deletes from `ratings`, `reservations`, `spots`, `parking_lots`, `password_reset_codes`, `users` in FK-safe order.
