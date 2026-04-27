@@ -11,7 +11,7 @@ pnpm workspace monorepo using TypeScript. ParkNow — a parking reservation syst
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Database**: SQLite (better-sqlite3) + Drizzle ORM — local file at `data/parknow.db`, no external DB needed
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
@@ -23,8 +23,11 @@ pnpm workspace monorepo using TypeScript. ParkNow — a parking reservation syst
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run push` — push DB schema changes to SQLite
+- `pnpm --filter @workspace/db run seed` — reseed test data (users + lots + spots)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
+
+Override DB location with `DATABASE_PATH` env var (default: `./data/parknow.db` relative to project root).
 
 ## Artifacts
 

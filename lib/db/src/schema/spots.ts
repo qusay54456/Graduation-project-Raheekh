@@ -1,10 +1,10 @@
-import { pgTable, serial, text, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { parkingLotsTable } from "./parking-lots";
 
-export const spotsTable = pgTable("spots", {
-  id: serial("id").primaryKey(),
+export const spotsTable = sqliteTable("spots", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   lotId: integer("lot_id").notNull().references(() => parkingLotsTable.id),
   spotNumber: text("spot_number").notNull(),
   status: text("status").notNull().default("available"),
