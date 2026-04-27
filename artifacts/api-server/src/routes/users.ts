@@ -34,6 +34,28 @@ router.patch("/dashboard/users/:id", requireSupervisor, async (req, res): Promis
     return;
   }
 
+  const actor = (req as any).user as { id: number; role: string };
+
+  // Block self-modification of role/blocked status (avoids accidental self-lockout).
+  if (actor.id === id) {
+    res.status(400).json({ error: "لا يمكنك تعديل صلاحياتك أو حالة حسابك" });
+    return;
+  }
+
+  // Look up the target so we can enforce role-based authorization rules below.
+  const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  if (!target) {
+    res.status(404).json({ error: "المستخدم غير موجود" });
+    return;
+  }
+
+  // Only admins can modify other admin accounts. Supervisors must NOT be able
+  // to demote, block, or otherwise mutate users with role "admin".
+  if (target.role === "admin" && actor.role !== "admin") {
+    res.status(403).json({ error: "تحتاج إلى صلاحيات المدير لتعديل هذا الحساب" });
+    return;
+  }
+
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (parsed.data.role != null) updates.role = parsed.data.role;
   if (parsed.data.isBlocked != null) updates.isBlocked = parsed.data.isBlocked;

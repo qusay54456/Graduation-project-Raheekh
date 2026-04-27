@@ -72,9 +72,10 @@ All ID columns use `integer().primaryKey({ autoIncrement: true })` (SQLite analo
 
 ## Seed Data
 
-- Supervisor: `supervisor@parknow.ps` / `supervisor123`
-- User: `user@parknow.ps` / `user123`
-- 3 parking lots in Ramallah (5 spots each, prices 5/4/7 ₪)
+- Admin: `admin@parknow.ps` / `admin123` (role `admin`, full access)
+- Supervisor: `supervisor@parknow.ps` / `supervisor123` (role `supervisor`)
+- User: `user@parknow.ps` / `user123` (role `user`)
+- 25 parking lots across 10 West Bank cities (see "Seed (Apr 2026 update)" below)
 
 ## API endpoints (key additions)
 
@@ -109,3 +110,20 @@ Orval names body schemas after operationIds, e.g. `verifyResetCode` → `VerifyR
 
 - 25 parking lots across 10 Palestinian West Bank cities (Ramallah/البيرة, Nablus, Hebron, Bethlehem, Jenin, Tulkarm, Qalqilya, Jericho, Salfit, Tubas), 339 spots total.
 - Run `pnpm --filter @workspace/db run seed` to reset + reseed. Cleanup deletes from `ratings`, `reservations`, `spots`, `parking_lots`, `password_reset_codes`, `users` in FK-safe order.
+
+## Roles & Authorization (Apr 2026 update)
+
+- Three roles: `user`, `supervisor`, `admin`. `admin` is a strict superset of `supervisor`.
+- Backend `requireSupervisor` middleware allows both `supervisor` and `admin` (`STAFF_ROLES` set in `artifacts/api-server/src/middlewares/auth.ts`). Reservations ownership checks (`artifacts/api-server/src/routes/reservations.ts`) likewise treat both as staff.
+- `PATCH /api/dashboard/users/:id` enforces:
+  - No self-modification (400).
+  - Only `admin` actors may modify users with `role === "admin"` (403 otherwise).
+  - `UpdateUserBody` Zod enum is `[user, supervisor, null]` so the `admin` role can only be assigned via seed (not via the API), preventing privilege escalation by supervisors.
+- Frontend `<ProtectedRoute>` accepts `requireRole?: Role | Role[]`. The `/` (Home) route is wrapped in `<ProtectedRoute>` so unauthenticated users (e.g. clicking the header logo from `/register`) are redirected to `/login`. Dashboard route uses `requireRole={["supervisor","admin"]}`.
+- Dashboard users-tab renders admin rows as a non-editable "مدير (Admin)" badge for non-admin viewers and disables the block toggle accordingly.
+
+## Homepage Filters (Apr 2026 update)
+
+- City/governorate dropdown (`<Select data-testid="select-city">`) on the homepage with all 10 West Bank cities + "الكل" option.
+- City filter is included in `filtersActive` so the "نشط" badge and "مسح" reset button cover it alongside price/availability filters.
+- Filter applies to both the list panel and the simulated map pins (single `filteredLots` array).

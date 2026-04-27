@@ -129,7 +129,7 @@ router.get("/reservations/:id", requireAuth, async (req, res): Promise<void> => 
 
   // Owner or supervisor only
   const user = (req as any).user;
-  if (details.userId !== user.id && user.role !== "supervisor") {
+  if (details.userId !== user.id && (user.role !== "supervisor" && user.role !== "admin")) {
     res.status(403).json({ error: "ممنوع" });
     return;
   }
@@ -151,7 +151,7 @@ router.patch("/reservations/:id/cancel", requireAuth, async (req, res): Promise<
   }
 
   const user = (req as any).user;
-  if (reservation.userId !== user.id && user.role !== "supervisor") {
+  if (reservation.userId !== user.id && (user.role !== "supervisor" && user.role !== "admin")) {
     res.status(403).json({ error: "ممنوع" });
     return;
   }

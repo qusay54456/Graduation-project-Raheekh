@@ -55,6 +55,10 @@ export function UsersTab() {
               ) : (
                 users?.map((u) => {
                   const isMe = u.id === me?.id;
+                  const isAdminRow = u.role === "admin";
+                  // Only admins may edit admin rows. Supervisors viewing the table see
+                  // admin accounts as read-only — matches backend authorization.
+                  const canEditRow = !isMe && (!isAdminRow || me?.role === "admin");
                   return (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">
@@ -63,17 +67,23 @@ export function UsersTab() {
                       <TableCell dir="ltr" className="text-left text-xs">{u.email}</TableCell>
                       <TableCell dir="ltr" className="text-left text-xs">{u.phone ?? "—"}</TableCell>
                       <TableCell>
-                        <Select
-                          value={u.role}
-                          disabled={isMe || update.isPending}
-                          onValueChange={(v) => update.mutate({ id: u.id, data: { role: v } })}
-                        >
-                          <SelectTrigger dir="rtl" className="w-32"><SelectValue /></SelectTrigger>
-                          <SelectContent dir="rtl">
-                            <SelectItem value="user">مستخدم</SelectItem>
-                            <SelectItem value="supervisor">مشرف</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        {isAdminRow ? (
+                          <Badge variant="outline" className="border-primary/40 text-primary font-bold">
+                            مدير (Admin)
+                          </Badge>
+                        ) : (
+                          <Select
+                            value={u.role}
+                            disabled={!canEditRow || update.isPending}
+                            onValueChange={(v) => update.mutate({ id: u.id, data: { role: v } })}
+                          >
+                            <SelectTrigger dir="rtl" className="w-32"><SelectValue /></SelectTrigger>
+                            <SelectContent dir="rtl">
+                              <SelectItem value="user">مستخدم</SelectItem>
+                              <SelectItem value="supervisor">مشرف</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </TableCell>
                       <TableCell>
                         {u.isBlocked ? (
@@ -88,7 +98,7 @@ export function UsersTab() {
                           <span className="text-xs text-muted-foreground">حظر</span>
                           <Switch
                             checked={u.isBlocked}
-                            disabled={isMe || update.isPending}
+                            disabled={!canEditRow || update.isPending}
                             onCheckedChange={(v) => update.mutate({ id: u.id, data: { isBlocked: v } })}
                           />
                         </div>

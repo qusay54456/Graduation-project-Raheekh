@@ -31,7 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Link href="/my-bookings" className="hidden sm:inline text-sm font-medium hover:text-primary transition-colors">
                   حجوزاتي
                 </Link>
-                {user.role === "supervisor" && (
+                {(user.role === "supervisor" || user.role === "admin") && (
                   <Link href="/dashboard" className="hidden sm:inline text-sm font-medium hover:text-primary transition-colors text-secondary">
                     لوحة التحكم
                   </Link>
@@ -61,7 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuItem onClick={() => setLocation("/my-bookings")} className="cursor-pointer sm:hidden">
                       <Calendar className="ml-2 h-4 w-4" /> حجوزاتي
                     </DropdownMenuItem>
-                    {user.role === "supervisor" && (
+                    {(user.role === "supervisor" || user.role === "admin") && (
                       <DropdownMenuItem onClick={() => setLocation("/dashboard")} className="cursor-pointer sm:hidden">
                         <LayoutDashboard className="ml-2 h-4 w-4" /> لوحة التحكم
                       </DropdownMenuItem>

@@ -31,6 +31,10 @@ export async function requireAuth(
   next();
 }
 
+// Supervisor OR admin can access supervisor-gated endpoints (admin is a strict
+// superset of supervisor permissions in this app).
+const STAFF_ROLES = new Set(["supervisor", "admin"]);
+
 export async function requireSupervisor(
   req: Request,
   res: Response,
@@ -38,7 +42,7 @@ export async function requireSupervisor(
 ): Promise<void> {
   await requireAuth(req, res, () => {
     const user = (req as any).user;
-    if (user?.role !== "supervisor") {
+    if (!user || !STAFF_ROLES.has(user.role)) {
       res.status(403).json({ error: "تحتاج إلى صلاحيات المشرف (Supervisor required)" });
       return;
     }

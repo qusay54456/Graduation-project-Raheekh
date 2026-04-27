@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+
+function extractApiError(error: unknown, fallback: string): string {
+  const e = error as { data?: { error?: string; message?: string }; message?: string } | null;
+  const fromBody = e?.data?.error ?? e?.data?.message;
+  if (typeof fromBody === "string" && fromBody.length > 0) return fromBody;
+  if (typeof e?.message === "string" && e.message.length > 0 && !e.message.startsWith("HTTP")) {
+    return e.message;
+  }
+  return fallback;
+}
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -13,15 +23,16 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const { register } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     if (password.length < 6) {
-      // Surface client-side validation immediately rather than round-tripping.
-      setIsLoading(false);
+      setErrorMsg("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
     setIsLoading(true);
@@ -30,6 +41,9 @@ export default function Register() {
       {
         onSuccess: () => {
           setLocation("/");
+        },
+        onError: (err) => {
+          setErrorMsg(extractApiError(err, "تعذّر إنشاء الحساب — حاول مرة أخرى"));
         },
         onSettled: () => setIsLoading(false),
       },
@@ -105,7 +119,17 @@ export default function Register() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            {errorMsg && (
+              <div
+                role="alert"
+                data-testid="alert-register-error"
+                className="w-full flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span className="flex-1">{errorMsg}</span>
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-register-submit">
               {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               إنشاء حساب (Register)
             </Button>

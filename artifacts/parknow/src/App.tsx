@@ -22,7 +22,11 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={Home} />
+        <Route path="/">
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        </Route>
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/forgot-password" component={ForgotPassword} />
@@ -46,7 +50,7 @@ function Router() {
         </Route>
 
         <Route path="/dashboard">
-          <ProtectedRoute requireRole="supervisor">
+          <ProtectedRoute requireRole={["supervisor", "admin"]}>
             <Dashboard />
           </ProtectedRoute>
         </Route>

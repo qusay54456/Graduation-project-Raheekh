@@ -15,12 +15,14 @@ sqlite.exec(`
 
 const supervisorHash = await bcrypt.hash("supervisor123", 10);
 const userHash = await bcrypt.hash("user123", 10);
+const adminHash = await bcrypt.hash("admin123", 10);
 
 const insertUser = sqlite.prepare(
   "INSERT INTO users (id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)"
 );
 insertUser.run(1, "محمد سليمان", "supervisor@parknow.ps", supervisorHash, "supervisor");
 insertUser.run(2, "أحمد الخطيب", "user@parknow.ps", userHash, "user");
+insertUser.run(3, "مدير النظام", "admin@parknow.ps", adminHash, "admin");
 
 type LotSeed = {
   name: string;
@@ -103,7 +105,8 @@ console.log(`  Lots: ${lotCount}`);
 console.log(`  Spots: ${spotCount}`);
 console.log("");
 console.log("Test accounts:");
-console.log("  supervisor@parknow.ps / supervisor123");
-console.log("  user@parknow.ps / user123");
+console.log("  admin@parknow.ps      / admin123       (admin)");
+console.log("  supervisor@parknow.ps / supervisor123  (supervisor)");
+console.log("  user@parknow.ps       / user123        (regular user)");
 
 sqlite.close();
