@@ -114,9 +114,17 @@ router.get("/dashboard/reservations/export", requireSupervisor, async (_req, res
   );
 
   const headers = ["id", "userName", "userEmail", "userPhone", "lotName", "spotNumber", "startTime", "endTime", "status", "totalPrice", "createdAt"];
+  // SECURITY: Neutralize CSV/formula injection. Spreadsheet apps (Excel,
+  // LibreOffice, Sheets) will execute cells starting with =, +, -, @, tab, or
+  // CR as formulas, which can exfiltrate data. Prefix with a single quote.
   const escape = (v: any) => {
-    const s = String(v ?? "");
-    return s.includes(",") || s.includes("\"") || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    let s = String(v ?? "");
+    if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
+      s = "'" + s;
+    }
+    return s.includes(",") || s.includes("\"") || s.includes("\n") || s.includes("\r")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
   };
   const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape((r as any)[h])).join(","))].join("\n");
 

@@ -33,9 +33,37 @@ app.use(
   }),
 );
 
+// Build a strict CORS allowlist. The frontend is same-origin behind the Replit
+// proxy, so browser requests typically don't include an Origin header — those
+// are allowed. Cross-origin requests must match an entry below.
+const allowedOrigins: string[] = [];
+if (process.env.REPLIT_DEV_DOMAIN) {
+  allowedOrigins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+}
+if (process.env.REPLIT_DOMAINS) {
+  for (const d of process.env.REPLIT_DOMAINS.split(",")) {
+    const t = d.trim();
+    if (t) allowedOrigins.push(`https://${t}`);
+  }
+}
+if (process.env.CORS_ORIGINS) {
+  for (const o of process.env.CORS_ORIGINS.split(",")) {
+    const t = o.trim();
+    if (t) allowedOrigins.push(t);
+  }
+}
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.push("http://localhost:5173", "http://localhost:19334", "http://localhost:80");
+}
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, cb) => {
+      // No Origin header => same-origin or non-browser; allow.
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   }),
 );

@@ -23,6 +23,16 @@ const passwordResetLimiter = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   message: { error: "تم تجاوز الحد، حاول مرة أخرى لاحقاً" },
+  keyGenerator: (req) => `${req.ip}:${(req.body as any)?.email ?? ""}`,
+});
+
+const verifyCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { error: "محاولات كثيرة جداً، حاول مرة أخرى لاحقاً" },
+  keyGenerator: (req) => `${req.ip}:${(req.body as any)?.email ?? ""}`,
 });
 
 function userToJson(user: typeof usersTable.$inferSelect) {
@@ -45,7 +55,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
-  const { name, email, password, phone, role } = parsed.data;
+  const { name, email, password, phone } = parsed.data;
 
   if (password.length < 6) {
     res.status(400).json({ error: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
@@ -59,13 +69,14 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const validRole = role === "supervisor" ? "supervisor" : "user";
 
+  // SECURITY: Public registration always creates a regular user. Supervisor
+  // role can only be granted by another supervisor via PATCH /users/:id.
   const [user] = await db.insert(usersTable).values({
     name,
     email,
     passwordHash,
-    role: validRole,
+    role: "user",
     phone: phone ?? null,
   }).returning();
 
@@ -149,6 +160,12 @@ router.post("/auth/forgot-password", passwordResetLimiter, async (req, res): Pro
     return;
   }
 
+  // Invalidate any prior unused codes for this email before issuing a new one.
+  await db
+    .update(passwordResetCodesTable)
+    .set({ used: true })
+    .where(and(eq(passwordResetCodesTable.email, email), eq(passwordResetCodesTable.used, false)));
+
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -161,13 +178,18 @@ router.post("/auth/forgot-password", passwordResetLimiter, async (req, res): Pro
     html: `<div style="font-family:sans-serif;direction:rtl"><h2>إعادة تعيين كلمة المرور</h2><p>رمز التحقق الخاص بك:</p><h1 style="background:#1a2b4a;color:white;padding:16px;text-align:center;letter-spacing:4px;border-radius:8px">${code}</h1><p>صالح لمدة 15 دقيقة.</p></div>`,
   });
 
+  // SECURITY: Only expose the code in the API response in development AND only
+  // when the email could not be sent. Never leak codes in production.
+  const exposeDevCode =
+    process.env.NODE_ENV !== "production" && (!emailEnabled || !result.sent);
+
   res.json({
-    message: "تم إرسال رمز التحقق إلى بريدك الإلكتروني",
-    devCode: emailEnabled && result.sent ? null : code,
+    message: "إذا كان البريد مسجلاً، ستتلقى رمز التحقق",
+    devCode: exposeDevCode ? code : null,
   });
 });
 
-router.post("/auth/verify-code", async (req, res): Promise<void> => {
+router.post("/auth/verify-code", verifyCodeLimiter, async (req, res): Promise<void> => {
   const parsed = VerifyResetCodeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -195,7 +217,7 @@ router.post("/auth/verify-code", async (req, res): Promise<void> => {
   res.json({ message: "الرمز صحيح" });
 });
 
-router.post("/auth/reset-password", async (req, res): Promise<void> => {
+router.post("/auth/reset-password", verifyCodeLimiter, async (req, res): Promise<void> => {
   const parsed = ResetPasswordBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
