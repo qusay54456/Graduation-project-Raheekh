@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ParkNow - Parking Reservation System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: lots
+    description: Parking lot operations
+  - name: spots
+    description: Spot operations
+  - name: reservations
+    description: Reservation operations
+  - name: dashboard
+    description: Supervisor dashboard operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,315 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lots:
+    get:
+      operationId: getLots
+      tags: [lots]
+      summary: Get all parking lots with optional distance sort
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: ["number", "null"]
+        - name: lng
+          in: query
+          schema:
+            type: ["number", "null"]
+      responses:
+        "200":
+          description: List of parking lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParkingLotWithStats"
+    post:
+      operationId: createLot
+      tags: [lots]
+      summary: Create a new parking lot (supervisor/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLotBody"
+      responses:
+        "201":
+          description: Lot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParkingLot"
+
+  /lots/{id}:
+    get:
+      operationId: getLot
+      tags: [lots]
+      summary: Get a specific parking lot with spots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Parking lot with spots
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParkingLotWithSpots"
+        "404":
+          description: Not found
+
+  /lots/{id}/spots:
+    get:
+      operationId: getLotSpots
+      tags: [spots]
+      summary: Get all spots for a lot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of spots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Spot"
+
+  /spots/{id}:
+    patch:
+      operationId: updateSpot
+      tags: [spots]
+      summary: Update spot status (supervisor)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpotBody"
+      responses:
+        "200":
+          description: Updated spot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Spot"
+        "404":
+          description: Not found
+
+  /reservations:
+    get:
+      operationId: getReservations
+      tags: [reservations]
+      summary: Get current user's reservations
+      responses:
+        "200":
+          description: List of reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservationWithDetails"
+    post:
+      operationId: createReservation
+      tags: [reservations]
+      summary: Create a reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReservationBody"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationWithDetails"
+        "400":
+          description: Spot not available or bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+
+  /reservations/{id}:
+    get:
+      operationId: getReservation
+      tags: [reservations]
+      summary: Get a specific reservation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reservation details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationWithDetails"
+        "404":
+          description: Not found
+
+  /reservations/{id}/cancel:
+    patch:
+      operationId: cancelReservation
+      tags: [reservations]
+      summary: Cancel a reservation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cancelled reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationWithDetails"
+        "404":
+          description: Not found
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get supervisor dashboard stats
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/reservations:
+    get:
+      operationId: getDashboardReservations
+      tags: [dashboard]
+      summary: Get all reservations for supervisor's lots
+      responses:
+        "200":
+          description: All reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservationWithDetails"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +352,312 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [user, supervisor]
+      required:
+        - name
+        - email
+        - password
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - role
+        - createdAt
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+        - message
+
+    ParkingLot:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerId:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        totalSpots:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - ownerId
+        - name
+        - location
+        - totalSpots
+        - lat
+        - lng
+        - createdAt
+
+    ParkingLotWithStats:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerId:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        totalSpots:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        createdAt:
+          type: string
+        availableSpots:
+          type: integer
+        reservedSpots:
+          type: integer
+        occupiedSpots:
+          type: integer
+        distance:
+          type: ["number", "null"]
+      required:
+        - id
+        - ownerId
+        - name
+        - location
+        - totalSpots
+        - lat
+        - lng
+        - createdAt
+        - availableSpots
+        - reservedSpots
+        - occupiedSpots
+
+    ParkingLotWithSpots:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerId:
+          type: integer
+        name:
+          type: string
+        location:
+          type: string
+        totalSpots:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+        createdAt:
+          type: string
+        spots:
+          type: array
+          items:
+            $ref: "#/components/schemas/Spot"
+      required:
+        - id
+        - ownerId
+        - name
+        - location
+        - totalSpots
+        - lat
+        - lng
+        - createdAt
+        - spots
+
+    CreateLotBody:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        totalSpots:
+          type: integer
+        lat:
+          type: number
+        lng:
+          type: number
+      required:
+        - name
+        - location
+        - totalSpots
+        - lat
+        - lng
+
+    Spot:
+      type: object
+      properties:
+        id:
+          type: integer
+        lotId:
+          type: integer
+        spotNumber:
+          type: string
+        status:
+          type: string
+          enum: [available, reserved, occupied]
+      required:
+        - id
+        - lotId
+        - spotNumber
+        - status
+
+    UpdateSpotBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [available, reserved, occupied]
+      required:
+        - status
+
+    CreateReservationBody:
+      type: object
+      properties:
+        spotId:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+      required:
+        - spotId
+        - startTime
+        - endTime
+
+    ReservationWithDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        spotId:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        spotNumber:
+          type: string
+        lotName:
+          type: string
+        lotLocation:
+          type: string
+        lotLat:
+          type: number
+        lotLng:
+          type: number
+        userName:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - spotId
+        - startTime
+        - endTime
+        - status
+        - spotNumber
+        - lotName
+        - lotLocation
+        - lotLat
+        - lotLng
+        - userName
+        - createdAt
+
+    DashboardStats:
+      type: object
+      properties:
+        totalSpots:
+          type: integer
+        availableSpots:
+          type: integer
+        reservedSpots:
+          type: integer
+        occupiedSpots:
+          type: integer
+        totalReservations:
+          type: integer
+        activeReservations:
+          type: integer
+        totalLots:
+          type: integer
+      required:
+        - totalSpots
+        - availableSpots
+        - reservedSpots
+        - occupiedSpots
+        - totalReservations
+        - activeReservations
+        - totalLots

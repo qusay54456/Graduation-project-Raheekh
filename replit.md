@@ -2,7 +2,7 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+pnpm workspace monorepo using TypeScript. ParkNow — a parking reservation system for Palestinian cities.
 
 ## Stack
 
@@ -15,6 +15,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend**: React + Vite (artifact: `parknow`)
+- **Auth**: bcrypt + express-session (SESSION_SECRET env var)
 
 ## Key Commands
 
@@ -24,4 +26,34 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Artifacts
+
+- **parknow** — React+Vite frontend at `/`
+- **api-server** — Express API server at `/api`
+
+## ParkNow Features
+
+- Arabic/English bilingual RTL interface
+- Home page with parking lot list + OpenStreetMap map
+- User registration/login with session cookies
+- Spot booking grid (green=available, red=reserved/occupied)
+- My bookings with cancel + Google Maps navigation
+- Supervisor dashboard with stats, spot grid management, reservations table
+- Role-based access (user / supervisor)
+
+## Database Schema
+
+- `users` — id, name, email, password_hash, role (user/supervisor), created_at
+- `parking_lots` — id, owner_id, name, location, total_spots, lat, lng, created_at
+- `spots` — id, lot_id, spot_number, status (available/reserved/occupied)
+- `reservations` — id, user_id, spot_id, start_time, end_time, status, created_at
+
+## Seed Data
+
+- Supervisor: `supervisor@parknow.ps` / `supervisor123`
+- User: `user@parknow.ps` / `user123`
+- 3 parking lots in Ramallah (5 spots each)
+
+## Codegen Notes
+
+After `orval --config ./orval.config.ts`, the `lib/api-zod/src/index.ts` must only export from `./generated/api` (the codegen script handles this).

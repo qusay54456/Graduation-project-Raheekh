@@ -1,0 +1,62 @@
+Build a complete web application called "ParkNow" – a parking reservation system for Palestinian cities.
+
+## Tech Stack
+- Frontend: HTML, CSS, JavaScript, Bootstrap (RTL/Arabic support)
+- Backend: PHP (pure PHP, no framework)
+- Database: MySQL
+- Maps: Google Maps JavaScript API + Geolocation API
+- Notifications: Firebase Cloud Messaging (FCM)
+
+## Database Tables (MySQL)
+1. users: user_id (PK), name, email, password (bcrypt), role (user/supervisor/admin), created_at
+2. parking_lots: lot_id (PK), owner_id (FK→users), name, location, total_spots, lat, lng
+3. spots: spot_id (PK), lot_id (FK→parking_lots), spot_number, status (available/reserved/occupied)
+4. reservations: reservation_id (PK), user_id (FK→users), spot_id (FK→spots), start_time, end_time, status (active/completed/cancelled)
+5. notifications: notif_id (PK), owner_id (FK→users), reservation_id (FK→reservations), message, sent_at
+
+## Pages to Build
+1. index.php – Homepage with interactive Google Map showing nearby parking lots as markers, side panel listing lots sorted by distance, search bar
+2. login.php – Login form (email + password)
+3. register.php – Registration form
+4. book.php – Booking page: show available spots as a grid (A1, A2... with color: green=available, red=reserved), select spot, select duration, confirm booking
+5. my-bookings.php – User's booking history with status
+6. dashboard.php – Supervisor dashboard: quick stats (total/reserved/available spots), reservations table, clickable spot grid to update status
+7. logout.php
+
+## Features
+- Auto-detect user location via browser Geolocation API
+- Show nearest parking lots sorted by distance on map and list
+- Registered users can book a numbered spot with instant confirmation
+- Supervisor receives FCM notification on new booking
+- Supervisor can update spot status in real-time
+- Navigation button opens Google Maps directions to the booked lot
+- Responsive design (mobile + desktop)
+- RTL layout support for Arabic text
+
+## UI Design
+- Color scheme: dark navy (#1a2b4a) and green (#00b359) with white
+- Professional and clean design with Bootstrap
+- Arabic + English bilingual interface (Arabic primary)
+- Logo text: 🅿 ParkNow
+
+## Security
+- Passwords hashed with bcrypt (password_hash)
+- Sessions for authentication
+- Role-based access: users vs supervisors
+- Input validation and SQL injection prevention (PDO prepared statements)
+
+## File Structure
+/index.php
+/login.php
+/register.php
+/book.php
+/my-bookings.php
+/dashboard.php
+/logout.php
+/includes/db.php (PDO connection)
+/includes/header.php
+/includes/footer.php
+/assets/css/style.css
+/assets/js/map.js
+
+Start by creating the database schema, then build all pages. Insert sample data: 3 parking lots in Ramallah with 5 spots each, 2 test users (one supervisor, one regular user).
