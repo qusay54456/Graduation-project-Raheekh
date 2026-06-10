@@ -20,8 +20,19 @@ import Profile from "@/pages/profile";
 import ForgotPassword from "@/pages/forgot-password";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
-
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      queryFn: async ({ queryKey }) => {
+        const res = await fetch(queryKey[0] as string, {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      },
+    },
+  },
+});
 function Router() {
   return (
     <Layout>

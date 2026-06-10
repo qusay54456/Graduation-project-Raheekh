@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+			"path": "../../.git"
+		},
+		{
+			"path": "../../node_modules"
+		},
+		{
+			"path": "../../scripts"
+		},
+		{
+			"path": "../../data"
+		},
+		{
+			"path": "../../.local"
+		},
+		{
+			"path": "../../attached_assets"
+		},
+		{
+			"path": "../../artifacts"
+		},
+		{
+			"path": "../../.agents"
+		},
+		{
+			"path": ".."
+		}
+	]
+}

@@ -24,7 +24,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (user) {
-      setName(user.name);
+      setName(user.name || "");
       setPhone(user.phone ?? "");
       setPhotoUrl(user.profilePhotoUrl ?? null);
     }
@@ -79,7 +79,8 @@ export default function Profile() {
               <Avatar className="h-20 w-20">
                 {photoUrl ? <AvatarImage src={photoUrl} alt={name} /> : null}
                 <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  {name.charAt(0).toUpperCase() || <UserIcon />}
+                  {/* تم الإصلاح هنا: استخدام حماية للتأكد من وجود الاسم */}
+                  {name ? name.charAt(0).toUpperCase() : <UserIcon />}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-2">

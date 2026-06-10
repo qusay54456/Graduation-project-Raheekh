@@ -21,7 +21,7 @@ export default function Book() {
   const [, params] = useRoute("/book/:id");
   const lotId = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
-  const { t, dir } = useTranslation();
+  const { t, lang, dir } = useTranslation();
 
   const [selectedSpotId, setSelectedSpotId] = useState<number | null>(null);
   const [durationHours, setDurationHours] = useState<string>("1");
@@ -60,6 +60,12 @@ export default function Book() {
     setLocation("/payment");
   };
 
+  const openInGoogleMaps = () => {
+    if (lot?.latitude && lot?.longitude) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lot.latitude},${lot.longitude}`, "_blank");
+    }
+  };
+
   if (lotLoading || spotsLoading) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-[50vh]">
@@ -90,7 +96,7 @@ export default function Book() {
   const selectedSpot = spots?.find((s) => s.id === selectedSpotId);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl" dir={dir}>
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">{lot.name}</h1>
         <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
@@ -119,7 +125,6 @@ export default function Book() {
                     key={spot.id}
                     disabled={spot.status !== "available"}
                     onClick={() => setSelectedSpotId(spot.id)}
-                    data-testid={`button-spot-${spot.id}`}
                     className={`relative flex items-center justify-center h-16 rounded-md border-2 font-mono text-lg font-bold transition-all ${
                       spot.status === "available"
                         ? selectedSpotId === spot.id
@@ -134,20 +139,6 @@ export default function Book() {
                     )}
                   </button>
                 ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-4 mt-8 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-secondary/20 border-2 border-secondary/50"></div>
-                  <span>{t("book.legendAvailable")}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-primary border-2 border-primary"></div>
-                  <span>{t("book.legendSelected")}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded bg-destructive/10 border-2 border-destructive/30"></div>
-                  <span>{t("book.legendReserved")}</span>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -173,14 +164,14 @@ export default function Book() {
         </div>
 
         <div className="space-y-4">
-          <Card className="md:sticky md:top-20">
+          <Card className="md:sticky md:top-20 shadow-lg border-primary/20">
             <CardHeader>
               <CardTitle>{t("book.summary")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>{t("book.selectedSpot")}</Label>
-                <div className="text-2xl font-mono font-bold text-primary bg-muted p-3 rounded-md text-center" data-testid="text-selected-spot">
+                <div className="text-2xl font-mono font-bold text-primary bg-muted p-3 rounded-md text-center">
                   {selectedSpot ? selectedSpot.spotNumber : "---"}
                 </div>
               </div>
@@ -188,7 +179,7 @@ export default function Book() {
               <div className="space-y-2">
                 <Label>{t("book.durationLabel")}</Label>
                 <Select value={durationHours} onValueChange={setDurationHours}>
-                  <SelectTrigger dir={dir} data-testid="select-duration">
+                  <SelectTrigger dir={dir}>
                     <SelectValue placeholder={t("book.durationPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent dir={dir}>
@@ -197,34 +188,32 @@ export default function Book() {
                     <SelectItem value="3">{t("book.duration3")}</SelectItem>
                     <SelectItem value="4">{t("book.duration4")}</SelectItem>
                     <SelectItem value="6">{t("book.duration6")}</SelectItem>
-                    <SelectItem value="12">{t("book.duration12")}</SelectItem>
-                    <SelectItem value="24">{t("book.duration24")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="border-t pt-4 space-y-1">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("book.pricePerHour")}</span>
-                  <span>{lot.pricePerHour} {t("common.currency")}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{t("book.durationLabel")}</span>
-                  <span>{durationHours} {t("book.durationSuffix")}</span>
-                </div>
                 <div className="flex justify-between text-lg font-bold text-primary pt-2">
                   <span>{t("book.total")}</span>
-                  <span data-testid="text-book-total">{totalPrice} {t("common.currency")}</span>
+                  <span>{totalPrice} {t("common.currency")}</span>
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-3">
+              <Button 
+                variant="outline" 
+                className="w-full gap-2 border-primary text-primary hover:bg-primary/5"
+                onClick={openInGoogleMaps}
+              >
+                <MapPin className="h-4 w-4" />
+                {lang === "ar" ? "عرض الموقع الجغرافي" : "View Location on Map"}
+              </Button>
+
               <Button
                 className="w-full"
                 size="lg"
                 disabled={!selectedSpotId}
                 onClick={handleProceedToPayment}
-                data-testid="button-confirm-booking"
               >
                 {t("book.bookButton")}
                 <ArrowRight className="h-4 w-4 mx-2 rtl:rotate-180" />
