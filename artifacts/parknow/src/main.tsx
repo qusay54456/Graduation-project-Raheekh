@@ -3,9 +3,6 @@ import App from "./App";
 import "./index.css";
 import { setBaseUrl } from "@workspace/api-client-react";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-if (apiUrl) {
-  setBaseUrl(apiUrl);
-}
+setBaseUrl("https://delegate-whooping-chewer.ngrok-free.dev");
 
 createRoot(document.getElementById("root")!).render(<App />);
